@@ -17,6 +17,7 @@ import 'package:drayve/pages/schedule_page.dart';
 import 'package:drayve/pages/login_signup_page.dart';
 import 'package:drayve/pages/profile_page.dart';
 import 'package:drayve/data/auth_state.dart';
+import 'package:drayve/services/api_services.dart';
 
 class LandingPage
     extends
@@ -80,6 +81,14 @@ class _LandingPageState
   void initState() {
     super.initState();
     _scrollController = SmoothScrollController();
+    _syncDrivers();
+  }
+
+  Future<void> _syncDrivers() async {
+    await ApiService().syncDriversWithApis(listPembalap);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override

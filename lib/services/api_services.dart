@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:drayve/models/statistik.dart';
+import 'package:drayve/data/statistikv2.dart';
 
 class DriverLiveInfo {
   final int points;
@@ -15,6 +16,8 @@ class DriverLiveInfo {
 
 class ApiService {
   static Future<Map<String, Map<String, dynamic>>>? _openF1CacheFuture;
+  static Future<Map<String, Map<String, dynamic>>>? _jolpicaStandingsCacheFuture;
+  static final Map<String, DriverSeasonStats> _driverSeasonStatsCache = {};
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -248,6 +251,7 @@ class ApiService {
         );
 
         final data = {
+          'driverId': driverObj['driverId']?.toString(),
           'points':
               double.tryParse(
                 item['points'].toString(),
@@ -276,6 +280,144 @@ class ApiService {
       );
     }
     return map;
+  }
+
+  /// 3. Ambil statistik musim berjalan (2026 Season) pembalap dari Jolpica API
+  Future<DriverSeasonStats> getLiveDriverSeasonStats(
+    String driverName,
+    DriverSeasonStats fallback,
+  ) async {
+    try {
+      final trimmed = driverName.trim();
+      if (trimmed.isEmpty) return fallback;
+
+      _jolpicaStandingsCacheFuture ??= _fetchJolpicaDriverStandings().then((data) {
+        if (data.isEmpty) {
+          _jolpicaStandingsCacheFuture = null;
+        }
+        return data;
+      });
+
+      final standingsMap = await _jolpicaStandingsCacheFuture!;
+      final fullKey = _normalizeKey(trimmed);
+      final lastKey = _normalizeKey(trimmed.split(' ').last);
+      final jData = standingsMap[fullKey] ?? standingsMap[lastKey];
+      final String? driverId = jData?['driverId']?.toString();
+      if (jData == null || driverId == null || driverId.isEmpty) {
+        return fallback;
+      }
+
+      final cached = _driverSeasonStatsCache[driverId];
+      if (cached != null) return cached;
+
+      final responses = await Future.wait([
+        _dio
+            .get('https://api.jolpi.ca/ergast/f1/current/drivers/$driverId/results.json?limit=100')
+            .then<Response<dynamic>?>((r) => r, onError: (_) => null),
+        _dio
+            .get('https://api.jolpi.ca/ergast/f1/current/drivers/$driverId/sprint.json?limit=100')
+            .then<Response<dynamic>?>((r) => r, onError: (_) => null),
+      ]);
+
+      final resultsResp = responses[0];
+      final sprintResp = responses[1];
+
+      int gpRaces = 0;
+      int gpPoints = 0;
+      int gpWins = 0;
+      int gpPodiums = 0;
+      int gpPoles = 0;
+      int gpTop10s = 0;
+      int fastestLaps = 0;
+      int dnfs = 0;
+
+      final racesList = resultsResp?.data?['MRData']?['RaceTable']?['Races'];
+      if (racesList is List) {
+        for (final race in racesList) {
+          final results = race['Results'];
+          if (results is List && results.isNotEmpty) {
+            final r = results[0];
+            gpRaces++;
+            gpPoints += double.tryParse(r['points']?.toString() ?? '')?.toInt() ?? 0;
+            final pos = int.tryParse(r['position']?.toString() ?? '') ?? 99;
+            if (pos == 1) gpWins++;
+            if (pos >= 1 && pos <= 3) gpPodiums++;
+            if (pos >= 1 && pos <= 10) gpTop10s++;
+            final grid = int.tryParse(r['grid']?.toString() ?? '') ?? 99;
+            if (grid == 1) gpPoles++;
+            if (r['FastestLap']?['rank']?.toString() == '1') {
+              fastestLaps++;
+            }
+            final status = (r['status']?.toString() ?? '').toLowerCase();
+            final posText = (r['positionText']?.toString() ?? '').toUpperCase();
+            final finished = status == 'finished' ||
+                status.startsWith('+') ||
+                status.contains('lap');
+            if (posText == 'R' || !finished) {
+              dnfs++;
+            }
+          }
+        }
+      }
+
+      int sprintRaces = 0;
+      int sprintPoints = 0;
+      int sprintWins = 0;
+      int sprintPodiums = 0;
+      int sprintPoles = 0;
+      int sprintTop10s = 0;
+
+      final sprintList = sprintResp?.data?['MRData']?['RaceTable']?['Races'];
+      if (sprintList is List) {
+        for (final race in sprintList) {
+          final results = race['SprintResults'];
+          if (results is List && results.isNotEmpty) {
+            final r = results[0];
+            sprintRaces++;
+            sprintPoints += double.tryParse(r['points']?.toString() ?? '')?.toInt() ?? 0;
+            final pos = int.tryParse(r['position']?.toString() ?? '') ?? 99;
+            if (pos == 1) sprintWins++;
+            if (pos >= 1 && pos <= 3) sprintPodiums++;
+            if (pos >= 1 && pos <= 10) sprintTop10s++;
+            final grid = int.tryParse(r['grid']?.toString() ?? '') ?? 99;
+            if (grid == 1) sprintPoles++;
+          }
+        }
+      }
+
+      final int standingsPoints = (jData['points'] as int?) ?? fallback.seasonPoints;
+      final int standingsPos = (jData['position'] as int?) ?? fallback.seasonPosition;
+      final int standingsWins = (jData['wins'] as int?) ?? fallback.grandPrixWins;
+
+      if (gpRaces == 0 && standingsPoints == 0 && standingsPos == 0) {
+        return fallback;
+      }
+
+      final liveStats = DriverSeasonStats(
+        seasonPoints: standingsPoints,
+        seasonPosition: standingsPos > 0 ? standingsPos : fallback.seasonPosition,
+        grandPrixRaces: gpRaces > 0 ? gpRaces : fallback.grandPrixRaces,
+        grandPrixPoints: gpRaces > 0 ? gpPoints : fallback.grandPrixPoints,
+        grandPrixWins: gpRaces > 0 ? gpWins : standingsWins,
+        grandPrixPodiums: gpRaces > 0 ? gpPodiums : fallback.grandPrixPodiums,
+        grandPrixPoles: gpRaces > 0 ? gpPoles : fallback.grandPrixPoles,
+        grandPrixTop10s: gpRaces > 0 ? gpTop10s : fallback.grandPrixTop10s,
+        fastestLaps: gpRaces > 0 ? fastestLaps : fallback.fastestLaps,
+        dnfs: gpRaces > 0 ? dnfs : fallback.dnfs,
+        sprintRaces: sprintRaces > 0 ? sprintRaces : fallback.sprintRaces,
+        sprintPoints: sprintRaces > 0 ? sprintPoints : fallback.sprintPoints,
+        sprintWins: sprintRaces > 0 ? sprintWins : fallback.sprintWins,
+        sprintPodiums: sprintRaces > 0 ? sprintPodiums : fallback.sprintPodiums,
+        sprintPoles: sprintRaces > 0 ? sprintPoles : fallback.sprintPoles,
+        sprintTop10s: sprintRaces > 0 ? sprintTop10s : fallback.sprintTop10s,
+      );
+
+      _driverSeasonStatsCache[driverId] = liveStats;
+      return liveStats;
+    } catch (e) {
+      debugPrint('Jolpica Driver Season Stats Error: $e');
+      return fallback;
+    }
   }
 
   /// Helper: Tarik data & foto pembalap dari OpenF1 API
