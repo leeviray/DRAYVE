@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drayve/data/bio_karir.dart';
+import 'package:drayve/data/f1_photos.dart';
 
 class BioTab
     extends
@@ -140,18 +141,36 @@ Widget _buildBioInfoLeft(DriverBio bio) {
           ],
         ),
         const SizedBox(height: 40),
-        // FOTO DARI INTERNET (Mengikuti ukuran asli gambar)
+        // FOTO F1 DARI WIKIMEDIA COMMONS (DENGAN FALLBACK ASET LOKAL)
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: Image.network(
-            "https://picsum.photos/seed/${bio.name.replaceAll(' ', '')}/400/500",
-            // Batasan ukuran dihapus agar gambar merender sesuai dimensi aslinya
+            getDriverBioPhotoUrl(bio.name),
+            width: double.infinity,
+            fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
-              height: 350,
+              height: 360,
               width: double.infinity,
               color: Colors.white10,
-              child: const Icon(Icons.broken_image, color: Colors.white54, size: 48),
+              child: Image.asset(
+                getDriverFallbackAsset(bio.name),
+                fit: BoxFit.contain,
+                alignment: Alignment.bottomCenter,
+                errorBuilder: (_, _, _) => const Icon(
+                  Icons.broken_image,
+                  color: Colors.white54,
+                  size: 48,
+                ),
+              ),
             ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Photo: Wikimedia Commons (CC BY-SA)",
+          style: GoogleFonts.montserrat(
+            color: Colors.white38,
+            fontSize: 11,
           ),
         ),
       ],

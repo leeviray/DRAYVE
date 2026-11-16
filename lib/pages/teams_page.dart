@@ -6,6 +6,9 @@ import 'dart:ui'
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drayve/data/f1_teams.dart';
+import 'package:drayve/data/data.dart';
+import 'package:drayve/models/statistik.dart';
+import 'package:drayve/pages/driver_detail_page.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
 import 'package:drayve/widgets/interactive.dart';
 import 'package:drayve/widgets/driver_avatar.dart';
@@ -1748,12 +1751,27 @@ class _DriverCards
                 for (final d in team.drivers)
                   SizedBox(
                     width: cardW,
-                    child: Container(
-                      padding: const EdgeInsets.all(
-                        16,
-                      ),
-                      decoration: _panelDecoration(),
-                      child: Row(
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          final driver = listPembalap.cast<Statistik?>().firstWhere(
+                            (s) => s!.nama.toLowerCase() == d.name.toLowerCase(),
+                            orElse: () => null,
+                          );
+                          if (driver != null) {
+                            Navigator.push(
+                              context,
+                              DrayvePageRoute(builder: (_) => DriverDetailPage(driver: driver)),
+                            );
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(
+                            16,
+                          ),
+                          decoration: _panelDecoration(),
+                          child: Row(
                         children: [
                           DriverAvatar(
                             driverName: d.name,
@@ -1802,6 +1820,8 @@ class _DriverCards
                             ),
                           ),
                         ],
+                      ),
+                    ),
                       ),
                     ),
                   ),
