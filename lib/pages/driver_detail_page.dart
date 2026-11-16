@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drayve/models/statistik.dart';
 import 'package:drayve/data/statistikv2.dart';
-import 'package:drayve/data/bio_karir.dart';
+import 'package:drayve/services/api_services.dart';
 import 'package:drayve/pages/bio.dart';
 import 'package:drayve/widgets/animated_background.dart';
 import 'package:drayve/widgets/smooth_scroll.dart';
@@ -35,6 +35,7 @@ class _DriverDetailPageState
   String? _hoveredTab;
 
   bool _isMobileMenuOpen = false;
+  DriverSeasonStats? _liveSeasonStats;
 
   final SmoothScrollController _scrollController = SmoothScrollController();
 
@@ -161,13 +162,13 @@ class _DriverDetailPageState
               ),
             );
 
-    // 3. MOBIL MASUK PALING AKHIR
+    // 3. MOBIL MASUK PALING AKHIR (MELUNCUR DARI KIRI)
     _carSlide =
         Tween<
               Offset
             >(
               begin: const Offset(
-                -0.4,
+                -1.5,
                 0,
               ),
               end: Offset.zero,
@@ -176,7 +177,7 @@ class _DriverDetailPageState
               CurvedAnimation(
                 parent: _enterController,
                 curve: const Interval(
-                  0.5,
+                  0.35,
                   1.0,
                   curve: Curves.easeOutCubic,
                 ),
@@ -193,8 +194,8 @@ class _DriverDetailPageState
               CurvedAnimation(
                 parent: _enterController,
                 curve: const Interval(
-                  0.5,
-                  0.8,
+                  0.35,
+                  0.55,
                   curve: Curves.easeOut,
                 ),
               ),
@@ -218,7 +219,49 @@ class _DriverDetailPageState
               ),
             );
 
-    _enterController.forward();
+    WidgetsBinding.instance.addPostFrameCallback((
+      _,
+    ) {
+      Future.delayed(
+        const Duration(
+          milliseconds: 250,
+        ),
+        () {
+          if (mounted) {
+            _enterController.forward();
+          }
+        },
+      );
+    });
+
+    _fetchLiveDriverStats();
+  }
+
+  Future<
+    void
+  >
+  _fetchLiveDriverStats() async {
+    DriverStatistics? localStats;
+    for (final s in statistikF1) {
+      if (s.name.toLowerCase() ==
+          widget.driver.nama.toLowerCase()) {
+        localStats = s;
+        break;
+      }
+    }
+    if (localStats ==
+        null)
+      return;
+
+    final live = await ApiService().getLiveDriverSeasonStats(
+      widget.driver.nama,
+      localStats.season2026,
+    );
+    if (mounted) {
+      setState(() {
+        _liveSeasonStats = live;
+      });
+    }
   }
 
   @override
@@ -1032,6 +1075,9 @@ class _DriverDetailPageState
   Widget _buildSeasonStatsColumn(
     DriverStatistics stats,
   ) {
+    final season =
+        _liveSeasonStats ??
+        stats.season2026;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1041,7 +1087,7 @@ class _DriverDetailPageState
               child: _buildStatRow(
                 "Season Position",
                 _formatPosition(
-                  stats.season2026.seasonPosition,
+                  season.seasonPosition,
                 ),
               ),
             ),
@@ -1051,7 +1097,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Season Points",
-                stats.season2026.seasonPoints.toString(),
+                season.seasonPoints.toString(),
               ),
             ),
           ],
@@ -1070,7 +1116,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Grand Prix Races",
-                stats.season2026.grandPrixRaces.toString(),
+                season.grandPrixRaces.toString(),
               ),
             ),
             const SizedBox(
@@ -1079,7 +1125,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Grand Prix Points",
-                stats.season2026.grandPrixPoints.toString(),
+                season.grandPrixPoints.toString(),
               ),
             ),
           ],
@@ -1092,7 +1138,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Grand Prix Wins",
-                stats.season2026.grandPrixWins.toString(),
+                season.grandPrixWins.toString(),
               ),
             ),
             const SizedBox(
@@ -1101,7 +1147,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Grand Prix Podiums",
-                stats.season2026.grandPrixPodiums.toString(),
+                season.grandPrixPodiums.toString(),
               ),
             ),
           ],
@@ -1114,7 +1160,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Grand Prix Poles",
-                stats.season2026.grandPrixPoles.toString(),
+                season.grandPrixPoles.toString(),
               ),
             ),
             const SizedBox(
@@ -1123,7 +1169,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Grand Prix Top 10s",
-                stats.season2026.grandPrixTop10s.toString(),
+                season.grandPrixTop10s.toString(),
               ),
             ),
           ],
@@ -1136,7 +1182,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "DHL Fastest Laps",
-                stats.season2026.fastestLaps.toString(),
+                season.fastestLaps.toString(),
               ),
             ),
             const SizedBox(
@@ -1145,7 +1191,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "DNFs",
-                stats.season2026.dnfs.toString(),
+                season.dnfs.toString(),
               ),
             ),
           ],
@@ -1164,7 +1210,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Sprint Races",
-                stats.season2026.sprintRaces.toString(),
+                season.sprintRaces.toString(),
               ),
             ),
             const SizedBox(
@@ -1173,7 +1219,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Sprint Points",
-                stats.season2026.sprintPoints.toString(),
+                season.sprintPoints.toString(),
               ),
             ),
           ],
@@ -1186,7 +1232,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Sprint Wins",
-                stats.season2026.sprintWins.toString(),
+                season.sprintWins.toString(),
               ),
             ),
             const SizedBox(
@@ -1195,7 +1241,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Sprint Podiums",
-                stats.season2026.sprintPodiums.toString(),
+                season.sprintPodiums.toString(),
               ),
             ),
           ],
@@ -1208,7 +1254,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Sprint Poles",
-                stats.season2026.sprintPoles.toString(),
+                season.sprintPoles.toString(),
               ),
             ),
             const SizedBox(
@@ -1217,7 +1263,7 @@ class _DriverDetailPageState
             Expanded(
               child: _buildStatRow(
                 "Sprint Top 10s",
-                stats.season2026.sprintTop10s.toString(),
+                season.sprintTop10s.toString(),
               ),
             ),
           ],
@@ -1399,37 +1445,55 @@ class _DriverDetailPageState
     String firstName,
     String lastName,
   ) {
+    final double w = MediaQuery.of(
+      context,
+    ).size.width;
+    final double h = 500.0; // Sesuai dengan tinggi container di build()
+
     return SizedBox(
       width: double.infinity,
+      height: h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
+          // --- 1. MOBIL (Di Belakang Pembalap) ---
           Positioned(
-            right: 900,
-            bottom: -400,
+            left:
+                w *
+                -0.10, // Geser mobil ke arah kanan agar tidak menabrak teks
+            bottom:
+                h *
+                0.10, // Ketinggian mobil dari lantai
+            width:
+                w *
+                0.70, // Lebar mobil proporsional dengan layar
             child: SlideTransition(
               position: _carSlide,
               child: FadeTransition(
                 opacity: _carFade,
-                child: Transform.rotate(
-                  angle: 1.6,
-                  child: Image.asset(
-                    widget.driver.fotoMobil,
-                    height: 1300,
-                    fit: BoxFit.contain,
-                    errorBuilder: (
-                      context,
-                      error,
-                      stackTrace,
-                    ) => const SizedBox(),
-                  ),
+                child: Image.asset(
+                  widget.driver.fotoMobil,
+                  fit: BoxFit.contain,
+                  errorBuilder: (
+                    context,
+                    error,
+                    stackTrace,
+                  ) => const SizedBox(),
                 ),
               ),
             ),
           ),
+
+          // --- 2. PEMBALAP (DEAD CENTER & EFEK TERPOTONG) ---
           Positioned(
-            right: 710,
-            bottom: -500,
+            left: 0,
+            right: 0, // Kunci kiri dan kanan = DEAD CENTER secara horizontal
+            bottom:
+                -h *
+                0.90, // Dorong ke bawah 55% agar kaki terpotong
+            height:
+                h *
+                1.9, // Besarkan 155% agar kepala tetap pas di atas
             child: SlideTransition(
               position: _driverSlide,
               child: FadeTransition(
@@ -1438,8 +1502,8 @@ class _DriverDetailPageState
                   angle: 0.0,
                   child: Image.asset(
                     widget.driver.fotoAset,
-                    height: 1000,
                     fit: BoxFit.contain,
+                    alignment: Alignment.topCenter, // Jangkar fokus di kepala
                     errorBuilder: (
                       context,
                       error,
@@ -1450,6 +1514,8 @@ class _DriverDetailPageState
               ),
             ),
           ),
+
+          // --- 3. TEKS (Tetap di Kiri Bawah) ---
           Positioned(
             left: 0,
             bottom: 80,
@@ -1480,18 +1546,10 @@ class _DriverDetailPageState
                           Shadow(
                             color: Colors.black,
                             blurRadius: 25.0,
-                            offset: Offset(
-                              0.0,
-                              0.0,
-                            ),
                           ),
                           Shadow(
                             color: Colors.black,
                             blurRadius: 40.0,
-                            offset: Offset(
-                              0.0,
-                              0.0,
-                            ),
                           ),
                         ],
                       ),
@@ -1515,18 +1573,10 @@ class _DriverDetailPageState
                           Shadow(
                             color: Colors.black,
                             blurRadius: 30.0,
-                            offset: Offset(
-                              0.0,
-                              0.0,
-                            ),
                           ),
                           Shadow(
                             color: Colors.black,
                             blurRadius: 50.0,
-                            offset: Offset(
-                              0.0,
-                              0.0,
-                            ),
                           ),
                         ],
                       ),
@@ -1592,10 +1642,6 @@ class _DriverDetailPageState
                               Shadow(
                                 color: Colors.black,
                                 blurRadius: 20.0,
-                                offset: Offset(
-                                  0.0,
-                                  0.0,
-                                ),
                               ),
                             ],
                           ),
@@ -1613,12 +1659,17 @@ class _DriverDetailPageState
   }
 
   // ==========================================
-  // LAYOUT MOBILE YANG SUDAH DIKREASIKAN (TENGAH, SETENGAH BADAN, MOBIL DI BELAKANG)
+  // LAYOUT MOBILE (DEAD CENTER & POTONG KAKI RESPONSIVE)
   // ==========================================
   Widget _buildMobileHero(
     String firstName,
     String lastName,
   ) {
+    final double w = MediaQuery.of(
+      context,
+    ).size.width;
+    final double h = 550.0; // Sesuai dengan tinggi container di build()
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -1627,24 +1678,29 @@ class _DriverDetailPageState
           right: -24, // Melebar melebihi padding
           left: -24,
           child: SizedBox(
-            height: 420, // Lebih tinggi agar komposisi pas
+            height: h,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // 1. FOTO MOBIL MASUK TERAKHIR (DI BELAKANG ORANG)
+                // --- 1. MOBIL DI BELAKANG ---
                 Positioned(
-                  top: -250, // Naik ke atas bahu pembalap
-                  left: -400,
-                  right: -50,
+                  left:
+                      -w *
+                      0.15, // Beri margin negatif kiri-kanan agar mobil melebar
+                  right:
+                      -w *
+                      0.15,
+                  bottom:
+                      h *
+                      0.25, // Naikkan mobil agar pas di belakang punggung
                   child: SlideTransition(
                     position: _carSlide,
                     child: FadeTransition(
                       opacity: _carFade,
                       child: Transform.rotate(
-                        angle: -0.0, // Miringkan sedikit agar dinamis
+                        angle: -0.0,
                         child: Image.asset(
                           widget.driver.fotoMobil,
-                          height: 1000, // Mobil diperbesar
                           fit: BoxFit.contain,
                           errorBuilder: (
                             context,
@@ -1657,32 +1713,29 @@ class _DriverDetailPageState
                   ),
                 ),
 
-                // 2. FOTO ORANG MUNCUL DULUAN (DI TENGAH DEPAN, POTONG KAKI)
+                // --- 2. PEMBALAP DEAD CENTER ---
                 Positioned(
-                  bottom: -20, // Nempel di bawah
                   left: 0,
-                  right: 0,
+                  right: 0, // Kunci kiri dan kanan
+                  bottom:
+                      -h *
+                      0.40, // Dorong ke bawah 40% (skala mobile tidak butuh sedalam desktop)
+                  height:
+                      h *
+                      1.40, // Besarkan proporsional (140% - 40% = 100%)
                   child: SlideTransition(
                     position: _driverSlide,
                     child: FadeTransition(
                       opacity: _driverFade,
-                      child: ClipRect(
-                        // Memotong bagian bawah (kaki)
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          heightFactor: 0.60, // Ambil 60% dari atas (kepala s/d perut)
-                          child: Image.asset(
-                            widget.driver.fotoAset,
-                            height: 600, // Ukuran raksasa
-                            fit: BoxFit.contain,
-                            alignment: Alignment.topCenter,
-                            errorBuilder: (
-                              context,
-                              error,
-                              stackTrace,
-                            ) => const SizedBox(),
-                          ),
-                        ),
+                      child: Image.asset(
+                        widget.driver.fotoAset,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.topCenter, // Jangkar di kepala
+                        errorBuilder: (
+                          context,
+                          error,
+                          stackTrace,
+                        ) => const SizedBox(),
                       ),
                     ),
                   ),
@@ -1692,7 +1745,7 @@ class _DriverDetailPageState
           ),
         ),
 
-        // 3. TEKS (MENYUSUL, DI ATAS GAMBAR DENGAN SHADOW TEBAL)
+        // --- 3. TEKS (MENYUSUL, DI ATAS GAMBAR) ---
         SlideTransition(
           position: _textSlide,
           child: FadeTransition(
@@ -1704,7 +1757,7 @@ class _DriverDetailPageState
                   firstName,
                   style: GoogleFonts.caveat(
                     color: Colors.white,
-                    fontSize: 32, // Sedikit lebih kecil agar aman
+                    fontSize: 32,
                     fontWeight: FontWeight.w400,
                     height: 1.0,
                     shadows: const [
@@ -1719,10 +1772,6 @@ class _DriverDetailPageState
                       Shadow(
                         color: Colors.black,
                         blurRadius: 20.0,
-                        offset: Offset(
-                          0.0,
-                          0.0,
-                        ),
                       ),
                     ],
                   ),
@@ -1731,7 +1780,7 @@ class _DriverDetailPageState
                   lastName.toUpperCase(),
                   style: GoogleFonts.poppins(
                     color: Colors.white,
-                    fontSize: 42, // Sedikit lebih kecil agar muat 1 baris
+                    fontSize: 42,
                     fontWeight: FontWeight.w900,
                     height: 1.0,
                     shadows: const [
@@ -1746,10 +1795,6 @@ class _DriverDetailPageState
                       Shadow(
                         color: Colors.black,
                         blurRadius: 25.0,
-                        offset: Offset(
-                          0.0,
-                          0.0,
-                        ),
                       ),
                     ],
                   ),
@@ -1811,10 +1856,6 @@ class _DriverDetailPageState
                             Shadow(
                               color: Colors.black,
                               blurRadius: 15.0,
-                              offset: Offset(
-                                0.0,
-                                0.0,
-                              ),
                             ),
                           ],
                         ),

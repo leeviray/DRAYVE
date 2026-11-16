@@ -12,9 +12,12 @@ import 'package:drayve/widgets/interactive.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
 import 'package:drayve/models/statistik.dart';
 import 'package:drayve/pages/aboutme_page.dart';
+import 'package:drayve/pages/teams_page.dart';
+import 'package:drayve/pages/schedule_page.dart';
 import 'package:drayve/pages/login_signup_page.dart';
 import 'package:drayve/pages/profile_page.dart';
 import 'package:drayve/data/auth_state.dart';
+import 'package:drayve/services/api_services.dart';
 
 class LandingPage
     extends
@@ -78,6 +81,14 @@ class _LandingPageState
   void initState() {
     super.initState();
     _scrollController = SmoothScrollController();
+    _syncDrivers();
+  }
+
+  Future<void> _syncDrivers() async {
+    await ApiService().syncDriversWithApis(listPembalap);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -246,7 +257,21 @@ class _LandingPageState
                         switchOutCurve: Curves.easeInCubic,
                         child:
                             _activeMenu ==
-                                'About'
+                                'Teams'
+                            ? const TeamsPage(
+                                key: ValueKey(
+                                  'teams_view',
+                                ),
+                              )
+                            : _activeMenu ==
+                                  'Schedule'
+                            ? const SchedulePage(
+                                key: ValueKey(
+                                  'schedule_view',
+                                ),
+                              )
+                            : _activeMenu ==
+                                  'About'
                             ? SingleChildScrollView(
                                 key: const ValueKey(
                                   'about_view',
@@ -375,7 +400,7 @@ class _LandingPageState
                               ),
                               curve: Curves.easeOutCubic,
                               height: _isMobileMenuOpen
-                                  ? 210.0
+                                  ? 280.0
                                   : 0.0,
                               width: double.infinity,
                               decoration: BoxDecoration(
@@ -421,6 +446,16 @@ class _LandingPageState
                                       'Favorite',
                                       'Favorite',
                                       Icons.star_border,
+                                    ),
+                                    _buildDropdownItem(
+                                      'Teams',
+                                      'Teams',
+                                      Icons.groups_outlined,
+                                    ),
+                                    _buildDropdownItem(
+                                      'Schedule',
+                                      'Schedule',
+                                      Icons.calendar_month_outlined,
                                     ),
                                     _buildDropdownItem(
                                       'About',
@@ -624,6 +659,20 @@ class _LandingPageState
                     _buildNavMenu(
                       'Favorite',
                       'Favorite',
+                    ),
+                    const SizedBox(
+                      width: 32,
+                    ),
+                    _buildNavMenu(
+                      'Teams',
+                      'Teams',
+                    ),
+                    const SizedBox(
+                      width: 32,
+                    ),
+                    _buildNavMenu(
+                      'Schedule',
+                      'Schedule',
                     ),
                     const SizedBox(
                       width: 32,

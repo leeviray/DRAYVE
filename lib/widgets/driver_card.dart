@@ -401,32 +401,42 @@ class _DriverCardState
                                       children: [
                                         // --- LAYER 1: Gambar Mobil ---
                                         Positioned(
-                                          left: -250,
-                                          bottom: -210,
-                                          child: RotatedBox(
-                                            quarterTurns: 1,
-                                            child: Image.asset(
-                                              driver.fotoMobil,
-                                              height: 580,
-                                              fit: BoxFit.contain,
-                                              errorBuilder: (
-                                                context,
-                                                error,
-                                                stackTrace,
-                                              ) => const SizedBox(),
-                                            ),
+                                          left:
+                                              -size.width *
+                                              0.64, // Sengaja digeser ke luar kiri 15% agar dinamis
+                                          bottom:
+                                              size.height *
+                                              0.06, // Naik sedikit (8%) agar ban tidak menyentuh lantai
+                                          width:
+                                              size.width *
+                                              1.20, // Lebar mobil paten di 85% lebar kartu
+                                          child: Image.asset(
+                                            driver.fotoMobil,
+                                            fit: BoxFit.contain,
+                                            alignment: Alignment.bottomLeft,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) => const SizedBox(),
                                           ),
                                         ),
 
-                                        // --- LAYER 2: Gambar Wajah Pembalap ---
+                                        // --- LAYER 2: Gambar Wajah Pembalap (Efek Half-Body) ---
                                         Positioned(
-                                          right: 60,
-                                          bottom: -310,
+                                          right:
+                                              size.width *
+                                              0.10, // Jarak aman 2% dari tepi kanan
+                                          bottom:
+                                              -size.height *
+                                              0.90, // DORONG KE BAWAH 55% agar kaki terpotong
+                                          height:
+                                              size.height *
+                                              1.80, // PERBESAR GAMBAR jadi 155% dari tinggi kartu
                                           child: Image.asset(
                                             driver.fotoAset,
-                                            height: 600,
                                             fit: BoxFit.contain,
-                                            alignment: Alignment.bottomRight,
+                                            alignment: Alignment.topCenter, // Fokuskan jangkar gambar di kepala
                                             errorBuilder:
                                                 (
                                                   context,
