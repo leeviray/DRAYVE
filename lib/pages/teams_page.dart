@@ -11,6 +11,7 @@ import 'package:drayve/models/statistik.dart';
 import 'package:drayve/pages/driver_detail_page.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
 import 'package:drayve/widgets/animated_background.dart';
+import 'package:drayve/widgets/custom_navbar.dart';
 import 'package:drayve/widgets/interactive.dart';
 import 'package:drayve/widgets/driver_avatar.dart';
 import 'package:drayve/services/api_services.dart'; // IMPORT API SERVICE
@@ -846,14 +847,18 @@ class TeamInfoPage
           SafeArea(
         child: Column(
           children: [
-            Container(
-              color: Colors.black.withOpacity(
-                0.55,
+            GlassNavbar(
+              margin: EdgeInsets.fromLTRB(
+                isMobile ? 16 : 24,
+                8,
+                isMobile ? 16 : 24,
+                8,
               ),
               padding: EdgeInsets.symmetric(
-                horizontal: hPadding,
-                vertical: 12,
+                horizontal: isMobile ? 18 : 28,
+                vertical: isMobile ? 10 : 14,
               ),
+              borderRadius: isMobile ? 24 : 32,
               child: Row(
                 children: [
                   HoverScale(

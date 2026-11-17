@@ -30,6 +30,7 @@ dependencies:
   shared_preferences: ^2.5.6
   shimmer: ^4.0.0
   photo_view: ^0.15.0
+  flutter_glass_morphism: ^1.0.0
 
 dev_dependencies:
   flutter_test:

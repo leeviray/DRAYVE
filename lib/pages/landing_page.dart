@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'package:drayve/widgets/animated_background.dart';
 import 'package:drayve/widgets/smooth_scroll.dart';
 import 'package:drayve/widgets/interactive.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
+import 'package:drayve/widgets/custom_navbar.dart';
 import 'package:drayve/models/statistik.dart';
 import 'package:drayve/pages/aboutme_page.dart';
 import 'package:drayve/pages/teams_page.dart';
@@ -351,7 +353,9 @@ class _LandingPageState
   Future<void> _syncDrivers() async {
     await ApiService().syncDriversWithApis(listPembalap);
     if (mounted) {
-      setState(() {});
+      setState(
+        () {},
+      );
     }
   }
 
@@ -665,7 +669,14 @@ class _LandingPageState
                       if (isMobile)
                         Align(
                           alignment: Alignment.topCenter,
-                          child: ClipRect(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: hPadding,
+                            ),
+                            child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
                             child: AnimatedContainer(
                               duration: const Duration(
                                 milliseconds: 350,
@@ -676,34 +687,19 @@ class _LandingPageState
                                   : 0.0,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color:
-                                    const Color(
-                                      0xFF15151E,
-                                    ).withOpacity(
-                                      0.98,
-                                    ),
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color:
-                                        const Color(
-                                          0xFFE10600,
-                                        ).withOpacity(
-                                          0.8,
-                                        ),
-                                    width: 2,
-                                  ),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withOpacity(0.16),
+                                    Colors.white.withOpacity(0.06),
+                                  ],
                                 ),
-                                boxShadow: [
-                                  if (_isMobileMenuOpen)
-                                    const BoxShadow(
-                                      color: Colors.black54,
-                                      blurRadius: 15,
-                                      offset: Offset(
-                                        0,
-                                        5,
-                                      ),
-                                    ),
-                                ],
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.22),
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(24),
                               ),
                               child: SingleChildScrollView(
                                 physics: const NeverScrollableScrollPhysics(),
@@ -738,6 +734,8 @@ class _LandingPageState
                                 ),
                               ),
                             ),
+                            ),
+                            ),
                           ),
                         ),
                     ],
@@ -756,24 +754,18 @@ class _LandingPageState
     double hPadding,
     double vPadding,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(
-          0.55,
-        ),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withOpacity(
-              0.08,
-            ),
-            width: 1,
-          ),
-        ),
+    return GlassNavbar(
+      margin: EdgeInsets.fromLTRB(
+        hPadding,
+        isMobile ? 8 : 12,
+        hPadding,
+        8,
       ),
       padding: EdgeInsets.symmetric(
-        horizontal: hPadding,
+        horizontal: isMobile ? 18 : 28,
         vertical: vPadding,
       ),
+      borderRadius: isMobile ? 24 : 32,
       child: isMobile
           ? Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

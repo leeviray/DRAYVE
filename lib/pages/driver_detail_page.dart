@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -8,6 +10,7 @@ import 'package:drayve/services/api_services.dart';
 import 'package:drayve/pages/bio.dart';
 import 'package:drayve/widgets/animated_background.dart';
 import 'package:drayve/widgets/smooth_scroll.dart';
+import 'package:drayve/widgets/custom_navbar.dart';
 
 import 'latest_post.dart';
 import 'discussion.dart';
@@ -245,21 +248,21 @@ class _DriverDetailPageState
               // ==========================================
               // TOP NAVBAR
               // ==========================================
-              Container(
-                color:
-                    const Color(
-                      0xFF15151E,
-                    ).withOpacity(
-                      0.55,
-                    ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0,
-                      vertical: 16.0,
-                    ),
-                    child: Row(
+              SafeArea(
+                bottom: false,
+                child: GlassNavbar(
+                  margin: EdgeInsets.fromLTRB(
+                    isMobile ? 16 : 24,
+                    8,
+                    isMobile ? 16 : 24,
+                    8,
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 18 : 28,
+                    vertical: isMobile ? 6 : 14,
+                  ),
+                  borderRadius: isMobile ? 24 : 32,
+                  child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         MouseRegion(
@@ -375,7 +378,6 @@ class _DriverDetailPageState
                     ),
                   ),
                 ),
-              ),
 
               // ==========================================
               // SCROLLABLE CONTENT & MOBILE OVERLAY
@@ -505,7 +507,12 @@ class _DriverDetailPageState
                     if (isMobile)
                       Align(
                         alignment: Alignment.topCenter,
-                        child: ClipRect(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
                           child: AnimatedContainer(
                             duration: const Duration(
                               milliseconds: 350,
@@ -516,34 +523,19 @@ class _DriverDetailPageState
                                 : 0.0,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color:
-                                  const Color(
-                                    0xFF15151E,
-                                  ).withOpacity(
-                                    0.98,
-                                  ),
-                              border: Border(
-                                bottom: BorderSide(
-                                  color:
-                                      const Color(
-                                        0xFFE10600,
-                                      ).withOpacity(
-                                        0.8,
-                                      ),
-                                  width: 2,
-                                ),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withOpacity(0.16),
+                                  Colors.white.withOpacity(0.06),
+                                ],
                               ),
-                              boxShadow: [
-                                if (_isMobileMenuOpen)
-                                  const BoxShadow(
-                                    color: Colors.black54,
-                                    blurRadius: 15,
-                                    offset: Offset(
-                                      0,
-                                      5,
-                                    ),
-                                  ),
-                              ],
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.22),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(24),
                             ),
                             child: SingleChildScrollView(
                               physics: const NeverScrollableScrollPhysics(),
@@ -568,6 +560,8 @@ class _DriverDetailPageState
                                 ],
                               ),
                             ),
+                          ),
+                          ),
                           ),
                         ),
                       ),
