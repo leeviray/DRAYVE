@@ -303,11 +303,12 @@ class _BlobPainter extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 class _CursorGlowPainter extends CustomPainter {
-  _CursorGlowPainter(this.scene) : super(repaint: scene);
+  _CursorGlowPainter(this.scene, {this.color}) : super(repaint: scene);
 
   final _Scene scene;
+  final Color? color;
 
-  static final Paint _cursorPaint = Paint()
+  static final Paint _defaultCursorPaint = Paint()
     ..blendMode = BlendMode.plus
     ..shader = ui.Gradient.radial(
       Offset.zero,
@@ -320,6 +321,19 @@ class _CursorGlowPainter extends CustomPainter {
       const [0.0, 0.42, 1.0],
     );
 
+  late final Paint _customCursorPaint = Paint()
+    ..blendMode = BlendMode.plus
+    ..shader = ui.Gradient.radial(
+      Offset.zero,
+      1,
+      [
+        Color.lerp(color!, Colors.white, 0.18)!.withValues(alpha: 0.32),
+        color!.withValues(alpha: 0.12),
+        color!.withValues(alpha: 0.0),
+      ],
+      const [0.0, 0.42, 1.0],
+    );
+
   @override
   void paint(Canvas canvas, Size size) {
     final cursor = scene.cursor;
@@ -328,11 +342,117 @@ class _CursorGlowPainter extends CustomPainter {
     canvas.save();
     canvas.translate(cursor.dx, cursor.dy);
     canvas.scale(380);
-    canvas.drawCircle(Offset.zero, 1, _cursorPaint);
+    canvas.drawCircle(
+      Offset.zero,
+      1,
+      color == null ? _defaultCursorPaint : _customCursorPaint,
+    );
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant _CursorGlowPainter oldDelegate) =>
-      oldDelegate.scene != scene;
+      oldDelegate.scene != scene || oldDelegate.color != color;
+}
+
+/// Efek cahaya mengikuti kursor (tanpa mengubah background di belakangnya).
+class CursorGlowOverlay extends StatefulWidget {
+  const CursorGlowOverlay({super.key, this.paused = false, this.color});
+
+  final bool paused;
+  final Color? color;
+
+  @override
+  State<CursorGlowOverlay> createState() => _CursorGlowOverlayState();
+}
+
+class _CursorGlowOverlayState extends State<CursorGlowOverlay>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  final _Scene _scene = _Scene();
+
+  Duration _lastElapsed = Duration.zero;
+  Offset? _pointerGlobal;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick);
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_onPointer);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant CursorGlowOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.paused != widget.paused) _syncTicker();
+  }
+
+  @override
+  void dispose() {
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_onPointer);
+    _ticker.dispose();
+    _scene.dispose();
+    super.dispose();
+  }
+
+  bool get _shouldAnimate => !widget.paused && !_reduceMotion;
+
+  void _syncTicker() {
+    if (_shouldAnimate && !_ticker.isActive) {
+      _lastElapsed = Duration.zero;
+      _ticker.start();
+    } else if (!_shouldAnimate && _ticker.isActive) {
+      _ticker.stop();
+    }
+  }
+
+  void _onPointer(PointerEvent event) {
+    if (event is PointerExitEvent) return;
+    if (event.position != Offset.zero) {
+      _pointerGlobal = event.position;
+    }
+  }
+
+  void _onTick(Duration elapsed) {
+    final rawDt = (elapsed - _lastElapsed).inMicroseconds / 1e6;
+    _lastElapsed = elapsed;
+    if (rawDt <= 0) return;
+    final dt = math.min(rawDt, 0.05);
+
+    final box = context.findRenderObject() as RenderBox?;
+    final pointer = _pointerGlobal;
+    if (box != null && box.hasSize && pointer != null) {
+      final local = box.globalToLocal(pointer);
+      final k = 1 - math.exp(-dt * 10);
+      _scene.cursor = _scene.cursor == null
+          ? local
+          : Offset.lerp(_scene.cursor, local, k);
+      _scene.cursorStrength =
+          (_scene.cursorStrength + dt * 3.0).clamp(0.0, 1.0);
+      _scene.markDirty();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      opaque: false,
+      onHover: (e) => _pointerGlobal = e.position,
+      child: IgnorePointer(
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: _CursorGlowPainter(_scene, color: widget.color),
+          ),
+        ),
+      ),
+    );
+  }
 }

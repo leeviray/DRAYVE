@@ -2,9 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drayve/data/data.dart';
+import 'package:drayve/providers/favorite_provider.dart';
 import 'package:drayve/widgets/driver_card.dart';
 import 'package:drayve/widgets/animated_background.dart';
 import 'package:drayve/widgets/smooth_scroll.dart';
@@ -16,7 +17,7 @@ import 'package:drayve/pages/teams_page.dart';
 import 'package:drayve/pages/schedule_page.dart';
 import 'package:drayve/pages/login_signup_page.dart';
 import 'package:drayve/pages/profile_page.dart';
-import 'package:drayve/data/auth_state.dart';
+import 'package:drayve/providers/auth_provider.dart';
 import 'package:drayve/services/api_services.dart';
 
 class LandingPage
@@ -44,10 +45,6 @@ class _LandingPageState
   // STATE BARU UNTUK DROPDOWN MOBILE
   bool _isMobileMenuOpen = false;
 
-  final Set<
-    String
-  >
-  _favoriteDrivers = {};
   final GlobalKey<
     ScaffoldState
   >
@@ -148,12 +145,14 @@ class _LandingPageState
     >
     drivers = listPembalap;
 
+    final favoriteProvider = context.watch<FavoriteProvider>();
+
     if (_activeMenu ==
         'Favorite') {
       drivers = drivers.where(
         (
           d,
-        ) => _favoriteDrivers.contains(
+        ) => favoriteProvider.isFavorite(
           d.nama,
         ),
       );
@@ -346,12 +345,6 @@ class _LandingPageState
                                               ),
                                               child: DriverCard(
                                                 driver: currentDriver,
-                                                isFavorite: _favoriteDrivers.contains(
-                                                  currentDriver.nama,
-                                                ),
-                                                onFavoriteToggle: () => _toggleFavorite(
-                                                  currentDriver,
-                                                ),
                                               ),
                                             );
                                           },
@@ -477,28 +470,6 @@ class _LandingPageState
         ],
       ),
     );
-  }
-
-  void _toggleFavorite(
-    Statistik driver,
-  ) {
-    if (!globalIsLoggedIn) {
-      _requireLogin();
-    } else {
-      setState(() {
-        if (_favoriteDrivers.contains(
-          driver.nama,
-        )) {
-          _favoriteDrivers.remove(
-            driver.nama,
-          );
-        } else {
-          _favoriteDrivers.add(
-            driver.nama,
-          );
-        }
-      });
-    }
   }
 
   Widget _buildTopNavbar(
@@ -714,7 +685,7 @@ class _LandingPageState
           });
           if (menuKey ==
                   'Favorite' &&
-              !globalIsLoggedIn) {
+              !context.read<AuthProvider>().isLoggedIn) {
             _requireLogin();
             return;
           }
@@ -1154,7 +1125,7 @@ class _LandingPageState
         onTap: () {
           if (menuKey ==
                   'Favorite' &&
-              !globalIsLoggedIn) {
+              !context.read<AuthProvider>().isLoggedIn) {
             _requireLogin();
             return;
           }
@@ -1216,8 +1187,9 @@ class _LandingPageState
   Widget _buildHeaderAction(
     bool isMobile,
   ) {
-    if (globalIsLoggedIn) {
-      final user = FirebaseAuth.instance.currentUser;
+    final authProvider = context.watch<AuthProvider>();
+    if (authProvider.isLoggedIn) {
+      final user = authProvider.user;
       return StreamBuilder<
         DocumentSnapshot
       >(

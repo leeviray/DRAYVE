@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:drayve/widgets/drayve_network_image.dart';
 import 'package:drayve/styles/colors.dart';
 import 'package:drayve/data/schedule_data.dart';
+import 'package:drayve/data/race_detail_data.dart';
+import 'package:drayve/data/f1_photos.dart';
 import 'package:drayve/pages/race_detail_page.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
+import 'package:drayve/widgets/driver_avatar.dart';
 
 /// Halaman Schedule: kalender F1 2026 (Round 1 - Round 20),
 /// tampilan kartu mengikuti referensi situs resmi Formula 1.
@@ -163,7 +167,11 @@ class _RaceCardState extends State<_RaceCard> {
             // BENDERA + NAMA NEGARA
             Row(
               children: [
-                _FlagCircle(code: race.countryCode, size: isMobile ? 22 : 26),
+                _FlagCircle(
+                  code: race.countryCode,
+                  flagUrl: race.rasterFlagUrl,
+                  size: isMobile ? 22 : 26,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -197,7 +205,7 @@ class _RaceCardState extends State<_RaceCard> {
             // PODIUM P1 - P3
             Row(
               children: [
-                for (int i = 0; i < race.podium.length; i++) ...[
+                for (int i = 0; i < race.podium.length && i < 3; i++) ...[
                   if (i > 0) const SizedBox(width: 8),
                   Expanded(
                     child: _PodiumTile(position: i + 1, podium: race.podium[i]),
@@ -246,13 +254,26 @@ class _DateBadge extends StatelessWidget {
   }
 }
 
-/// Bendera bulat. Mencoba memuat `assets/images/flags/<kode>.png`;
-/// jika file belum ada, tampil lingkaran dengan kode negara.
+/// Bendera bulat. Memuat bendera dari [flagUrl] (flagcdn), fallback ke aset lokal atau kode negara.
 class _FlagCircle extends StatelessWidget {
-  const _FlagCircle({required this.code, required this.size});
+  const _FlagCircle({required this.code, this.flagUrl, required this.size});
 
   final String code;
+  final String? flagUrl;
   final double size;
+
+  Widget _fallback() => Container(
+        color: Colors.white.withValues(alpha: 0.12),
+        alignment: Alignment.center,
+        child: Text(
+          code.toUpperCase(),
+          style: GoogleFonts.montserrat(
+            color: Colors.white70,
+            fontSize: size * 0.38,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -260,22 +281,18 @@ class _FlagCircle extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: Image.asset(
-          'assets/images/flags/${code.toLowerCase()}.png',
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: Colors.white.withValues(alpha: 0.12),
-            alignment: Alignment.center,
-            child: Text(
-              code.toUpperCase(),
-              style: GoogleFonts.montserrat(
-                color: Colors.white70,
-                fontSize: size * 0.38,
-                fontWeight: FontWeight.w800,
+        child: flagUrl != null && flagUrl!.isNotEmpty
+            ? DrayveNetworkImage(
+                imageUrl: flagUrl!,
+                fit: BoxFit.cover,
+                placeholder: (_) => _fallback(),
+                errorWidget: (_) => _fallback(),
+              )
+            : Image.asset(
+                'assets/images/flags/${code.toLowerCase()}.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _fallback(),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -293,6 +310,8 @@ class _PodiumTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color teamColor =
         kDriverTeamColor[podium.driverCode] ?? AppColors.textGrey;
+    final DriverInfo? driver = kDriverInfo[podium.driverCode];
+    final String fullName = driver?.fullName ?? podium.driverCode;
 
     return Container(
       height: 52,
@@ -332,19 +351,12 @@ class _PodiumTile extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 8),
-            // AVATAR PEMBALAP (placeholder warna tim)
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: teamColor.withValues(alpha: 0.9),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person,
-                size: 20,
-                color: Colors.black54,
-              ),
+            DriverAvatar(
+              driverName: fullName,
+              fallbackAsset: driver != null ? getDriverFallbackAsset(fullName) : null,
+              fallbackInitials: podium.driverCode,
+              radius: 15,
+              backgroundColor: teamColor.withValues(alpha: 0.9),
             ),
             const SizedBox(width: 8),
             Column(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:drayve/widgets/drayve_network_image.dart';
 import 'package:drayve/data/bio_karir.dart';
 import 'package:drayve/data/f1_photos.dart';
 
@@ -144,11 +145,19 @@ Widget _buildBioInfoLeft(DriverBio bio) {
         // FOTO F1 DARI WIKIMEDIA COMMONS (DENGAN FALLBACK ASET LOKAL)
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.network(
-            getDriverBioPhotoUrl(bio.name),
+          child: DrayveNetworkImage(
+            imageUrl: getDriverBioPhotoUrl(bio.name),
             width: double.infinity,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
+            placeholder: (_) => Container(
+              height: 360,
+              width: double.infinity,
+              color: Colors.white10,
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFFE10600)),
+              ),
+            ),
+            errorWidget: (_) => Container(
               height: 360,
               width: double.infinity,
               color: Colors.white10,

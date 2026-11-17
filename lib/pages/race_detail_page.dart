@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:drayve/widgets/drayve_network_image.dart';
 import 'package:drayve/styles/colors.dart';
 import 'package:drayve/data/schedule_data.dart';
 import 'package:drayve/data/race_detail_data.dart';
+import 'package:drayve/data/f1_photos.dart';
 import 'package:drayve/widgets/animated_background.dart';
+import 'package:drayve/widgets/driver_avatar.dart';
 
 /// Halaman detail satu balapan: tab Results, Circuits, dan About.
 class RaceDetailPage extends StatefulWidget {
@@ -128,7 +131,11 @@ class _RaceDetailPageState extends State<RaceDetailPage> {
         const SizedBox(height: 16),
         Row(
           children: [
-            _FlagCircle(code: race.countryCode, size: isMobile ? 30 : 42),
+            _FlagCircle(
+              code: race.countryCode,
+              flagUrl: race.rasterFlagUrl,
+              size: isMobile ? 30 : 42,
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -282,14 +289,16 @@ class _ResultsTab extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          'Menampilkan podium (P1 - P3). Posisi lainnya belum diisi.',
-          style: GoogleFonts.montserrat(
-            color: AppColors.textGrey,
-            fontSize: 12,
+        if (race.podium.length <= 3) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Menampilkan podium (P1 - P3). Posisi lainnya belum diisi.',
+            style: GoogleFonts.montserrat(
+              color: AppColors.textGrey,
+              fontSize: 12,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -298,19 +307,28 @@ class _ResultsTab extends StatelessWidget {
     final DriverInfo? driver = kDriverInfo[podium.driverCode];
     final Color teamColor =
         kDriverTeamColor[podium.driverCode] ?? AppColors.textGrey;
-    final String time =
-        index == 0 ? podium.result : '${podium.result}s'; // gap diberi 's'
+    final String time = index == 0
+        ? podium.result
+        : (podium.result.startsWith('+') ? '${podium.result}s' : podium.result);
+    final String lapsStr =
+        podium.laps != null ? '${podium.laps}' : (laps != null ? '$laps' : '-');
+    final String ptsStr = podium.points != null
+        ? '${podium.points}'
+        : (index < kPodiumPoints.length ? '${kPodiumPoints[index]}' : '0');
+    final String posStr = (podium.positionText == 'R' || podium.positionText == 'W')
+        ? 'NC'
+        : '${index + 1}';
 
     return _row(
-      pos: '${index + 1}',
+      pos: posStr,
       no: driver != null ? '${driver.number}' : '-',
       driver: driver?.fullName ?? podium.driverCode,
       driverCode: podium.driverCode,
       team: driver?.team ?? '-',
       teamColor: teamColor,
-      lapsText: laps != null ? '$laps' : '-',
+      lapsText: lapsStr,
       time: time,
-      pts: '${kPodiumPoints[index]}',
+      pts: ptsStr,
     );
   }
 
@@ -358,6 +376,16 @@ class _ResultsTab extends StatelessWidget {
             flex: 3,
             child: Row(
               children: [
+                if (!header) ...[
+                  DriverAvatar(
+                    driverName: driver,
+                    fallbackAsset: getDriverFallbackAsset(driver),
+                    fallbackInitials: driverCode ?? (driver.isNotEmpty ? driver[0] : '?'),
+                    radius: 15,
+                    backgroundColor: (teamColor ?? AppColors.textGrey).withValues(alpha: 0.85),
+                  ),
+                  const SizedBox(width: 10),
+                ],
                 Flexible(
                   child: Text(
                     driver,
@@ -463,27 +491,35 @@ class _CircuitsTab extends StatelessWidget {
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         clipBehavior: Clip.antiAlias,
-        child: Image.asset(
-          c.trackMapPath,
+        padding: const EdgeInsets.all(16),
+        child: DrayveNetworkImage(
+          imageUrl: race.trackImageUrl,
           fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.route_outlined,
-                  size: 56,
-                  color: Colors.white.withValues(alpha: 0.18),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Track map belum tersedia',
-                  style: GoogleFonts.montserrat(
-                    color: AppColors.textGrey,
-                    fontSize: 13,
+          placeholder: (_) => const Center(
+            child: CircularProgressIndicator(color: Color(0xFFE10600)),
+          ),
+          errorWidget: (_) => Image.asset(
+            c.trackMapPath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.route_outlined,
+                    size: 56,
+                    color: Colors.white.withValues(alpha: 0.18),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  Text(
+                    'Track map belum tersedia',
+                    style: GoogleFonts.montserrat(
+                      color: AppColors.textGrey,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -767,13 +803,26 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Bendera bulat. Mencoba memuat `assets/images/flags/<kode>.png`;
-/// jika belum ada, tampil lingkaran berisi kode negara.
+/// Bendera bulat. Memuat bendera dari [flagUrl] (flagcdn), fallback ke aset lokal atau kode negara.
 class _FlagCircle extends StatelessWidget {
-  const _FlagCircle({required this.code, required this.size});
+  const _FlagCircle({required this.code, this.flagUrl, required this.size});
 
   final String code;
+  final String? flagUrl;
   final double size;
+
+  Widget _fallback() => Container(
+        color: Colors.white.withValues(alpha: 0.12),
+        alignment: Alignment.center,
+        child: Text(
+          code.toUpperCase(),
+          style: GoogleFonts.montserrat(
+            color: Colors.white70,
+            fontSize: size * 0.38,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -781,22 +830,18 @@ class _FlagCircle extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: Image.asset(
-          'assets/images/flags/${code.toLowerCase()}.png',
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: Colors.white.withValues(alpha: 0.12),
-            alignment: Alignment.center,
-            child: Text(
-              code.toUpperCase(),
-              style: GoogleFonts.montserrat(
-                color: Colors.white70,
-                fontSize: size * 0.38,
-                fontWeight: FontWeight.w800,
+        child: flagUrl != null && flagUrl!.isNotEmpty
+            ? DrayveNetworkImage(
+                imageUrl: flagUrl!,
+                fit: BoxFit.cover,
+                placeholder: (_) => _fallback(),
+                errorWidget: (_) => _fallback(),
+              )
+            : Image.asset(
+                'assets/images/flags/${code.toLowerCase()}.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _fallback(),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }

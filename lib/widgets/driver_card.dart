@@ -1,18 +1,20 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:drayve/providers/auth_provider.dart';
 import 'package:drayve/models/statistik.dart';
 import 'package:drayve/pages/driver_detail_page.dart';
+import 'package:drayve/pages/login_signup_page.dart';
+import 'package:drayve/providers/favorite_provider.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
 
 class DriverCard
     extends
         StatefulWidget {
   final Statistik driver;
-  final bool isFavorite;
-  final VoidCallback onFavoriteToggle;
 
-  const DriverCard({super.key, required this.driver, required this.isFavorite, required this.onFavoriteToggle});
+  const DriverCard({super.key, required this.driver});
 
   @override
   State<
@@ -599,50 +601,67 @@ class _DriverCardState
                                         Positioned(
                                           bottom: 16,
                                           right: 16,
-                                          child: GestureDetector(
-                                            onTap: widget.onFavoriteToggle,
-                                            child: AnimatedContainer(
-                                              duration: const Duration(
-                                                milliseconds: 200,
-                                              ),
-                                              padding: const EdgeInsets.all(
-                                                8,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: widget.isFavorite
-                                                    ? Colors.amber.withValues(
-                                                        alpha: 0.22,
-                                                      )
-                                                    : Colors.black.withValues(
-                                                        alpha: 0.5,
+                                          child: Consumer<FavoriteProvider>(
+                                            builder: (context, favoriteProvider, child) {
+                                              final bool isFav = favoriteProvider.isFavorite(driver.nama);
+
+                                              return GestureDetector(
+                                                onTap: () async {
+                                                  if (!context.read<AuthProvider>().isLoggedIn) {
+                                                    await Navigator.push(
+                                                      context,
+                                                      DrayvePageRoute(
+                                                        builder: (_) => const AuthPage(),
                                                       ),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: widget.isFavorite
-                                                      ? Colors.amber
-                                                      : Colors.white24,
-                                                  width: 1.2,
+                                                    );
+                                                  } else {
+                                                    favoriteProvider.toggleFavorite(driver.nama);
+                                                  }
+                                                },
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(
+                                                    milliseconds: 200,
+                                                  ),
+                                                  padding: const EdgeInsets.all(
+                                                    8,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: isFav
+                                                        ? Colors.amber.withValues(
+                                                            alpha: 0.22,
+                                                          )
+                                                        : Colors.black.withValues(
+                                                            alpha: 0.5,
+                                                          ),
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: isFav
+                                                          ? Colors.amber
+                                                          : Colors.white24,
+                                                      width: 1.2,
+                                                    ),
+                                                  ),
+                                                  child: AnimatedScale(
+                                                    scale: isFav
+                                                        ? 1.15
+                                                        : 1.0,
+                                                    duration: const Duration(
+                                                      milliseconds: 200,
+                                                    ),
+                                                    curve: Curves.elasticOut,
+                                                    child: Icon(
+                                                      isFav
+                                                          ? Icons.star_rounded
+                                                          : Icons.star_border_rounded,
+                                                      color: isFav
+                                                          ? Colors.amber
+                                                          : Colors.white,
+                                                      size: 24,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                              child: AnimatedScale(
-                                                scale: widget.isFavorite
-                                                    ? 1.15
-                                                    : 1.0,
-                                                duration: const Duration(
-                                                  milliseconds: 200,
-                                                ),
-                                                curve: Curves.elasticOut,
-                                                child: Icon(
-                                                  widget.isFavorite
-                                                      ? Icons.star_rounded
-                                                      : Icons.star_border_rounded,
-                                                  color: widget.isFavorite
-                                                      ? Colors.amber
-                                                      : Colors.white,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                            ),
+                                              );
+                                            },
                                           ),
                                         ),
                                       ],

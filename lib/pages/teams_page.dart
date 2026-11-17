@@ -10,6 +10,7 @@ import 'package:drayve/data/data.dart';
 import 'package:drayve/models/statistik.dart';
 import 'package:drayve/pages/driver_detail_page.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
+import 'package:drayve/widgets/animated_background.dart';
 import 'package:drayve/widgets/interactive.dart';
 import 'package:drayve/widgets/driver_avatar.dart';
 import 'package:drayve/services/api_services.dart'; // IMPORT API SERVICE
@@ -818,7 +819,12 @@ class TeamInfoPage
 
     return Scaffold(
       backgroundColor: bg,
-      body: SafeArea(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CursorGlowOverlay(color: team.color),
+          ),
+          SafeArea(
         child: Column(
           children: [
             Container(
@@ -1036,6 +1042,8 @@ class TeamInfoPage
             ),
           ],
         ),
+          ),
+        ],
       ),
     );
   }

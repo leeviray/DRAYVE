@@ -41,10 +41,27 @@ const Map<String, DriverInfo> kDriverInfo = {
   'NOR': DriverInfo(1, 'Lando Norris', 'McLaren'),
   'VER': DriverInfo(3, 'Max Verstappen', 'Red Bull Racing'),
   'HAD': DriverInfo(6, 'Isack Hadjar', 'Red Bull Racing'),
+  'GAS': DriverInfo(10, 'Pierre Gasly', 'Alpine'),
+  'COL': DriverInfo(43, 'Franco Colapinto', 'Alpine'),
+  'ALO': DriverInfo(14, 'Fernando Alonso', 'Aston Martin'),
+  'STR': DriverInfo(18, 'Lance Stroll', 'Aston Martin'),
+  'ALB': DriverInfo(23, 'Alexander Albon', 'Williams'),
+  'SAI': DriverInfo(55, 'Carlos Sainz', 'Williams'),
+  'LAW': DriverInfo(30, 'Liam Lawson', 'Racing Bulls'),
+  'LIN': DriverInfo(41, 'Arvid Lindblad', 'Racing Bulls'),
+  'TSU': DriverInfo(22, 'Yuki Tsunoda', 'Racing Bulls'),
+  'OCO': DriverInfo(31, 'Esteban Ocon', 'Haas F1 Team'),
+  'BEA': DriverInfo(87, 'Oliver Bearman', 'Haas F1 Team'),
+  'HIR': DriverInfo(50, 'Ryo Hirakawa', 'Haas F1 Team'),
+  'CAM': DriverInfo(51, 'Rafael Camara', 'Haas F1 Team'),
+  'HUL': DriverInfo(27, 'Nico Hülkenberg', 'Audi'),
+  'BOR': DriverInfo(5, 'Gabriel Bortoleto', 'Audi'),
+  'PER': DriverInfo(11, 'Sergio Pérez', 'Cadillac'),
+  'BOT': DriverInfo(77, 'Valtteri Bottas', 'Cadillac'),
 };
 
-/// Poin untuk P1 - P3.
-const List<int> kPodiumPoints = [25, 18, 15];
+/// Poin untuk P1 - P22.
+const List<int> kPodiumPoints = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 /// Info circuit per round. Round yang belum ada datanya (mis. 16)
 /// otomatis tampil "belum diisi" di halaman detail.
@@ -214,7 +231,17 @@ const Map<int, RaceCircuitInfo> kRaceCircuitInfo = {
     raceDistanceKm: 306.049,
     trackMapPath: 'assets/images/circuits/azerbaijan_circuit.jpg',
   ),
-  // 16: Bahrain -> belum diisi
+  16: RaceCircuitInfo(
+    circuitName: 'Sepang International Circuit',
+    location: 'Kuala Lumpur, Malaysia',
+    lengthKm: 5.543,
+    firstGrandPrix: 1999,
+    laps: 55,
+    fastestLapTime: '1:34.080',
+    fastestLapHolder: 'Sebastian Vettel (2017)',
+    raceDistanceKm: 304.865,
+    trackMapPath: 'assets/images/circuits/malaysia_circuit.jpg',
+  ),
   17: RaceCircuitInfo(
     circuitName: 'Marina Bay Street Circuit',
     location: 'Singapore',

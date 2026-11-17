@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:drayve/widgets/drayve_network_image.dart';
+import 'package:provider/provider.dart';
 import 'package:drayve/data/data_sosmed.dart';
 import 'package:drayve/data/f1_photos.dart';
 import 'package:drayve/pages/login_signup_page.dart';
-import 'package:drayve/data/auth_state.dart'; // IMPORT GLOBAL STATE
+import 'package:drayve/providers/auth_provider.dart';
 
 class LatestPostTab
     extends
@@ -123,7 +125,7 @@ class _InteractivePostCardState
     void
   >
   _handleLike() async {
-    if (!globalIsLoggedIn) {
+    if (!context.read<AuthProvider>().isLoggedIn) {
       // PAKAI GLOBAL STATE
       final result = await Navigator.push(
         context,
@@ -154,7 +156,7 @@ class _InteractivePostCardState
     void
   >
   _handleComment() async {
-    if (!globalIsLoggedIn) {
+    if (!context.read<AuthProvider>().isLoggedIn) {
       // PAKAI GLOBAL STATE
       final result = await Navigator.push(
         context,
@@ -296,30 +298,26 @@ class _InteractivePostCardState
             ),
             child: AspectRatio(
               aspectRatio: 16 / 10,
-              child: Image.network(
-                getDriverPostPhotoUrl(
+              child: DrayveNetworkImage(
+                imageUrl: getDriverPostPhotoUrl(
                   widget.driverName,
                   widget.postIndex,
                 ),
                 fit: BoxFit.cover,
-                errorBuilder:
-                    (
-                      context,
-                      error,
-                      stackTrace,
-                    ) => Container(
-                      color: Colors.white10,
-                      child: Image.asset(
-                        widget.fotoAset,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.bottomCenter,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.broken_image,
-                          color: Colors.white54,
-                          size: 48,
-                        ),
-                      ),
+                placeholder: (_) => Container(color: Colors.white10),
+                errorWidget: (_) => Container(
+                  color: Colors.white10,
+                  child: Image.asset(
+                    widget.fotoAset,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.bottomCenter,
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.broken_image,
+                      color: Colors.white54,
+                      size: 48,
                     ),
+                  ),
+                ),
               ),
             ),
           ),

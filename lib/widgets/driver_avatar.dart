@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:drayve/services/api_services.dart';
+import 'package:drayve/widgets/drayve_network_image.dart';
 
 class DriverAvatar extends StatefulWidget {
   final String? imageUrl;
@@ -94,11 +95,12 @@ class _DriverAvatarState extends State<DriverAvatar> {
         builder: (context, snapshot) {
           final url = snapshot.data;
           if (url != null && url.isNotEmpty) {
-            return Image.network(
-              url,
+            return DrayveNetworkImage(
+              imageUrl: url,
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
-              errorBuilder: (_, _, _) => _buildAssetOrInitialsFallback(),
+              placeholder: (_) => _buildInitialsFallback(),
+              errorWidget: (_) => _buildAssetOrInitialsFallback(),
             );
           }
           return _buildAssetOrInitialsFallback();

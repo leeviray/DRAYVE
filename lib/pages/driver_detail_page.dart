@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:drayve/models/statistik.dart';
 import 'package:drayve/data/statistikv2.dart';
 import 'package:drayve/services/api_services.dart';
@@ -28,9 +30,7 @@ class _DriverDetailPageState
     extends
         State<
           DriverDetailPage
-        >
-    with
-        SingleTickerProviderStateMixin {
+        > {
   String _activeTab = 'Statistics';
   String? _hoveredTab;
 
@@ -39,201 +39,9 @@ class _DriverDetailPageState
 
   final SmoothScrollController _scrollController = SmoothScrollController();
 
-  // ==========================================
-  // KONTROL ANIMASI MOTION MASUK
-  // ==========================================
-  late AnimationController _enterController;
-  late Animation<
-    Offset
-  >
-  _carSlide;
-  late Animation<
-    Offset
-  >
-  _driverSlide;
-  late Animation<
-    Offset
-  >
-  _textSlide;
-
-  late Animation<
-    double
-  >
-  _carFade;
-  late Animation<
-    double
-  >
-  _driverFade;
-  late Animation<
-    double
-  >
-  _textFade;
-  late Animation<
-    double
-  >
-  _globalFade;
-
   @override
   void initState() {
     super.initState();
-
-    _enterController = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        milliseconds: 1500,
-      ),
-    );
-
-    // 1. ORANG MUNCUL DULUAN
-    _driverSlide =
-        Tween<
-              Offset
-            >(
-              begin: const Offset(
-                0,
-                0.4,
-              ),
-              end: Offset.zero,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _enterController,
-                curve: const Interval(
-                  0.0,
-                  0.6,
-                  curve: Curves.easeOutBack,
-                ),
-              ),
-            );
-    _driverFade =
-        Tween<
-              double
-            >(
-              begin: 0.0,
-              end: 1.0,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _enterController,
-                curve: const Interval(
-                  0.0,
-                  0.4,
-                  curve: Curves.easeOut,
-                ),
-              ),
-            );
-
-    // 2. TEKS MENYUSUL
-    _textSlide =
-        Tween<
-              Offset
-            >(
-              begin: const Offset(
-                0,
-                0.15,
-              ),
-              end: Offset.zero,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _enterController,
-                curve: const Interval(
-                  0.2,
-                  0.7,
-                  curve: Curves.easeOutCubic,
-                ),
-              ),
-            );
-    _textFade =
-        Tween<
-              double
-            >(
-              begin: 0.0,
-              end: 1.0,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _enterController,
-                curve: const Interval(
-                  0.2,
-                  0.5,
-                  curve: Curves.easeOut,
-                ),
-              ),
-            );
-
-    // 3. MOBIL MASUK PALING AKHIR (MELUNCUR DARI KIRI)
-    _carSlide =
-        Tween<
-              Offset
-            >(
-              begin: const Offset(
-                -1.5,
-                0,
-              ),
-              end: Offset.zero,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _enterController,
-                curve: const Interval(
-                  0.35,
-                  1.0,
-                  curve: Curves.easeOutCubic,
-                ),
-              ),
-            );
-    _carFade =
-        Tween<
-              double
-            >(
-              begin: 0.0,
-              end: 1.0,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _enterController,
-                curve: const Interval(
-                  0.35,
-                  0.55,
-                  curve: Curves.easeOut,
-                ),
-              ),
-            );
-
-    _globalFade =
-        Tween<
-              double
-            >(
-              begin: 0.0,
-              end: 1.0,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _enterController,
-                curve: const Interval(
-                  0.0,
-                  0.5,
-                  curve: Curves.easeOut,
-                ),
-              ),
-            );
-
-    WidgetsBinding.instance.addPostFrameCallback((
-      _,
-    ) {
-      Future.delayed(
-        const Duration(
-          milliseconds: 250,
-        ),
-        () {
-          if (mounted) {
-            _enterController.forward();
-          }
-        },
-      );
-    });
-
     _fetchLiveDriverStats();
   }
 
@@ -266,7 +74,6 @@ class _DriverDetailPageState
 
   @override
   void dispose() {
-    _enterController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -604,23 +411,25 @@ class _DriverDetailPageState
                                   bottom: isMobile
                                       ? null
                                       : -20, // <--- UBAH INI: Di mobile bottom-nya dinonaktifkan (null)
-                                  child: FadeTransition(
-                                    opacity: _globalFade,
-                                    child: Text(
-                                      widget.driver.nomorMobil.toString(),
-                                      style: GoogleFonts.montserrat(
-                                        // Ukuran font diperkecil sedikit di mobile agar pas di pojok atas
-                                        fontSize: isMobile
-                                            ? 180
-                                            : 450,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.black.withOpacity(
-                                          0.12,
-                                        ),
-                                        height: 1.0,
+                                  child: Text(
+                                    widget.driver.nomorMobil.toString(),
+                                    style: GoogleFonts.montserrat(
+                                      // Ukuran font diperkecil sedikit di mobile agar pas di pojok atas
+                                      fontSize: isMobile
+                                          ? 180
+                                          : 450,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.12,
                                       ),
+                                      height: 1.0,
                                     ),
-                                  ),
+                                  )
+                                      .animate()
+                                      .fade(
+                                        duration: 750.ms,
+                                        curve: Curves.easeOut,
+                                      ),
                                 ),
                                 Padding(
                                   padding: EdgeInsets.only(
@@ -1024,6 +833,20 @@ class _DriverDetailPageState
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
                 letterSpacing: 2.0,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Container(
+              height: 280,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: _F1RadarChart(
+                stats: _liveSeasonStats ?? detailStats.season2026,
+                themeColor: _getTeamGradient(widget.driver.tim).colors.first,
               ),
             ),
             const SizedBox(
@@ -1467,21 +1290,23 @@ class _DriverDetailPageState
             width:
                 w *
                 0.70, // Lebar mobil proporsional dengan layar
-            child: SlideTransition(
-              position: _carSlide,
-              child: FadeTransition(
-                opacity: _carFade,
-                child: Image.asset(
-                  widget.driver.fotoMobil,
-                  fit: BoxFit.contain,
-                  errorBuilder: (
-                    context,
-                    error,
-                    stackTrace,
-                  ) => const SizedBox(),
+            child: Image.asset(
+              widget.driver.fotoMobil,
+              fit: BoxFit.contain,
+              errorBuilder: (
+                context,
+                error,
+                stackTrace,
+              ) => const SizedBox(),
+            )
+                .animate(delay: 350.ms)
+                .fade(duration: 300.ms, curve: Curves.easeOut)
+                .slideX(
+                  begin: -1.5,
+                  end: 0,
+                  duration: 650.ms,
+                  curve: Curves.easeOutCubic,
                 ),
-              ),
-            ),
           ),
 
           // --- 2. PEMBALAP (DEAD CENTER & EFEK TERPOTONG) ---
@@ -1494,164 +1319,168 @@ class _DriverDetailPageState
             height:
                 h *
                 1.9, // Besarkan 155% agar kepala tetap pas di atas
-            child: SlideTransition(
-              position: _driverSlide,
-              child: FadeTransition(
-                opacity: _driverFade,
-                child: Transform.rotate(
-                  angle: 0.0,
-                  child: Image.asset(
-                    widget.driver.fotoAset,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.topCenter, // Jangkar fokus di kepala
-                    errorBuilder: (
-                      context,
-                      error,
-                      stackTrace,
-                    ) => const SizedBox(),
-                  ),
-                ),
+            child: Transform.rotate(
+              angle: 0.0,
+              child: Image.asset(
+                widget.driver.fotoAset,
+                fit: BoxFit.contain,
+                alignment: Alignment.topCenter, // Jangkar fokus di kepala
+                errorBuilder: (
+                  context,
+                  error,
+                  stackTrace,
+                ) => const SizedBox(),
               ),
-            ),
+            )
+                .animate()
+                .fade(duration: 600.ms, curve: Curves.easeOut)
+                .slideY(
+                  begin: 0.4,
+                  end: 0,
+                  duration: 900.ms,
+                  curve: Curves.easeOutBack,
+                ),
           ),
 
           // --- 3. TEKS (Tetap di Kiri Bawah) ---
           Positioned(
             left: 0,
             bottom: 80,
-            child: SlideTransition(
-              position: _textSlide,
-              child: FadeTransition(
-                opacity: _textFade,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  firstName,
+                  style: GoogleFonts.caveat(
+                    color: Colors.white,
+                    fontSize: 48,
+                    fontWeight: FontWeight.w400,
+                    height: 1.0,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 10.0,
+                        offset: Offset(
+                          2.0,
+                          2.0,
+                        ),
+                      ),
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 25.0,
+                      ),
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 40.0,
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  lastName.toUpperCase(),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 72,
+                    fontWeight: FontWeight.w900,
+                    height: 1.0,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 10.0,
+                        offset: Offset(
+                          3.0,
+                          3.0,
+                        ),
+                      ),
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 30.0,
+                      ),
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 50.0,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+                Row(
                   children: [
-                    Text(
-                      firstName,
-                      style: GoogleFonts.caveat(
-                        color: Colors.white,
-                        fontSize: 48,
-                        fontWeight: FontWeight.w400,
-                        height: 1.0,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black,
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: 0.9,
+                            ),
                             blurRadius: 10.0,
-                            offset: Offset(
+                            spreadRadius: 2.0,
+                            offset: const Offset(
                               2.0,
                               2.0,
                             ),
-                          ),
-                          Shadow(
-                            color: Colors.black,
-                            blurRadius: 25.0,
-                          ),
-                          Shadow(
-                            color: Colors.black,
-                            blurRadius: 40.0,
                           ),
                         ],
                       ),
-                    ),
-                    Text(
-                      lastName.toUpperCase(),
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 72,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black,
-                            blurRadius: 10.0,
-                            offset: Offset(
-                              3.0,
-                              3.0,
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(
+                        'assets/images/flags/${widget.driver.negara}.webp',
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (
+                              context,
+                              error,
+                              stackTrace,
+                            ) => const Icon(
+                              Icons.flag,
+                              size: 16,
+                              color: Colors.white,
                             ),
-                          ),
-                          Shadow(
-                            color: Colors.black,
-                            blurRadius: 30.0,
-                          ),
-                          Shadow(
-                            color: Colors.black,
-                            blurRadius: 50.0,
-                          ),
-                        ],
                       ),
                     ),
                     const SizedBox(
-                      height: 24,
+                      width: 12,
                     ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(
-                                  0.9,
-                                ),
-                                blurRadius: 10.0,
-                                spreadRadius: 2.0,
-                                offset: const Offset(
-                                  2.0,
-                                  2.0,
-                                ),
-                              ),
-                            ],
+                    Text(
+                      "${widget.driver.negara[0].toUpperCase()}${widget.driver.negara.substring(1)}  |  ${widget.driver.tim}  |  ${widget.driver.nomorMobil}",
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black,
+                            blurRadius: 8.0,
+                            offset: Offset(
+                              2.0,
+                              2.0,
+                            ),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Image.asset(
-                            'assets/images/flags/${widget.driver.negara}.webp',
-                            fit: BoxFit.cover,
-                            errorBuilder:
-                                (
-                                  context,
-                                  error,
-                                  stackTrace,
-                                ) => const Icon(
-                                  Icons.flag,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
+                          Shadow(
+                            color: Colors.black,
+                            blurRadius: 20.0,
                           ),
-                        ),
-                        const SizedBox(
-                          width: 12,
-                        ),
-                        Text(
-                          "${widget.driver.negara[0].toUpperCase()}${widget.driver.negara.substring(1)}  |  ${widget.driver.tim}  |  ${widget.driver.nomorMobil}",
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            shadows: const [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 8.0,
-                                offset: Offset(
-                                  2.0,
-                                  2.0,
-                                ),
-                              ),
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 20.0,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ),
+              ],
+            )
+                .animate(delay: 200.ms)
+                .fade(duration: 450.ms, curve: Curves.easeOut)
+                .slideY(
+                  begin: 0.15,
+                  end: 0,
+                  duration: 750.ms,
+                  curve: Curves.easeOutCubic,
+                ),
           ),
         ],
       ),
@@ -1693,24 +1522,26 @@ class _DriverDetailPageState
                   bottom:
                       h *
                       0.25, // Naikkan mobil agar pas di belakang punggung
-                  child: SlideTransition(
-                    position: _carSlide,
-                    child: FadeTransition(
-                      opacity: _carFade,
-                      child: Transform.rotate(
-                        angle: -0.0,
-                        child: Image.asset(
-                          widget.driver.fotoMobil,
-                          fit: BoxFit.contain,
-                          errorBuilder: (
-                            context,
-                            error,
-                            stackTrace,
-                          ) => const SizedBox(),
-                        ),
-                      ),
+                  child: Transform.rotate(
+                    angle: -0.0,
+                    child: Image.asset(
+                      widget.driver.fotoMobil,
+                      fit: BoxFit.contain,
+                      errorBuilder: (
+                        context,
+                        error,
+                        stackTrace,
+                      ) => const SizedBox(),
                     ),
-                  ),
+                  )
+                      .animate(delay: 350.ms)
+                      .fade(duration: 300.ms, curve: Curves.easeOut)
+                      .slideX(
+                        begin: -1.5,
+                        end: 0,
+                        duration: 650.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
                 ),
 
                 // --- 2. PEMBALAP DEAD CENTER ---
@@ -1723,22 +1554,24 @@ class _DriverDetailPageState
                   height:
                       h *
                       1.40, // Besarkan proporsional (140% - 40% = 100%)
-                  child: SlideTransition(
-                    position: _driverSlide,
-                    child: FadeTransition(
-                      opacity: _driverFade,
-                      child: Image.asset(
-                        widget.driver.fotoAset,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.topCenter, // Jangkar di kepala
-                        errorBuilder: (
-                          context,
-                          error,
-                          stackTrace,
-                        ) => const SizedBox(),
+                  child: Image.asset(
+                    widget.driver.fotoAset,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.topCenter, // Jangkar di kepala
+                    errorBuilder: (
+                      context,
+                      error,
+                      stackTrace,
+                    ) => const SizedBox(),
+                  )
+                      .animate()
+                      .fade(duration: 600.ms, curve: Curves.easeOut)
+                      .slideY(
+                        begin: 0.4,
+                        end: 0,
+                        duration: 900.ms,
+                        curve: Curves.easeOutBack,
                       ),
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -1746,129 +1579,194 @@ class _DriverDetailPageState
         ),
 
         // --- 3. TEKS (MENYUSUL, DI ATAS GAMBAR) ---
-        SlideTransition(
-          position: _textSlide,
-          child: FadeTransition(
-            opacity: _textFade,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              firstName,
+              style: GoogleFonts.caveat(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w400,
+                height: 1.0,
+                shadows: const [
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 8.0,
+                    offset: Offset(
+                      1.0,
+                      1.0,
+                    ),
+                  ),
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 20.0,
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              lastName.toUpperCase(),
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 42,
+                fontWeight: FontWeight.w900,
+                height: 1.0,
+                shadows: const [
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 10.0,
+                    offset: Offset(
+                      2.0,
+                      2.0,
+                    ),
+                  ),
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 25.0,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(
+              height: 16,
+            ),
+            Row(
               children: [
-                Text(
-                  firstName,
-                  style: GoogleFonts.caveat(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w400,
-                    height: 1.0,
-                    shadows: const [
-                      Shadow(
-                        color: Colors.black,
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: 0.9,
+                        ),
                         blurRadius: 8.0,
-                        offset: Offset(
+                        spreadRadius: 1.0,
+                        offset: const Offset(
                           1.0,
                           1.0,
                         ),
-                      ),
-                      Shadow(
-                        color: Colors.black,
-                        blurRadius: 20.0,
                       ),
                     ],
                   ),
-                ),
-                Text(
-                  lastName.toUpperCase(),
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 42,
-                    fontWeight: FontWeight.w900,
-                    height: 1.0,
-                    shadows: const [
-                      Shadow(
-                        color: Colors.black,
-                        blurRadius: 10.0,
-                        offset: Offset(
-                          2.0,
-                          2.0,
-                        ),
-                      ),
-                      Shadow(
-                        color: Colors.black,
-                        blurRadius: 25.0,
-                      ),
-                    ],
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/images/flags/${widget.driver.negara}.webp',
+                    fit: BoxFit.cover,
+                    errorBuilder: (
+                      context,
+                      error,
+                      stackTrace,
+                    ) => const SizedBox(),
                   ),
                 ),
                 const SizedBox(
-                  height: 16,
+                  width: 8,
                 ),
-                Row(
-                  children: [
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(
-                              0.9,
-                            ),
-                            blurRadius: 8.0,
-                            spreadRadius: 1.0,
-                            offset: const Offset(
-                              1.0,
-                              1.0,
-                            ),
+                Flexible(
+                  child: Text(
+                    "${widget.driver.negara[0].toUpperCase()}${widget.driver.negara.substring(1)} | ${widget.driver.tim}",
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      shadows: const [
+                        Shadow(
+                          color: Colors.black,
+                          blurRadius: 5.0,
+                          offset: Offset(
+                            1.0,
+                            1.0,
                           ),
-                        ],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Image.asset(
-                        'assets/images/flags/${widget.driver.negara}.webp',
-                        fit: BoxFit.cover,
-                        errorBuilder: (
-                          context,
-                          error,
-                          stackTrace,
-                        ) => const SizedBox(),
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 8,
-                    ),
-                    Flexible(
-                      child: Text(
-                        "${widget.driver.negara[0].toUpperCase()}${widget.driver.negara.substring(1)} | ${widget.driver.tim}",
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          shadows: const [
-                            Shadow(
-                              color: Colors.black,
-                              blurRadius: 5.0,
-                              offset: Offset(
-                                1.0,
-                                1.0,
-                              ),
-                            ),
-                            Shadow(
-                              color: Colors.black,
-                              blurRadius: 15.0,
-                            ),
-                          ],
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        Shadow(
+                          color: Colors.black,
+                          blurRadius: 15.0,
+                        ),
+                      ],
                     ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
+          ],
+        )
+            .animate(delay: 200.ms)
+            .fade(duration: 450.ms, curve: Curves.easeOut)
+            .slideY(
+              begin: 0.15,
+              end: 0,
+              duration: 750.ms,
+              curve: Curves.easeOutCubic,
+            ),
       ],
+    );
+  }
+}
+
+class _F1RadarChart extends StatelessWidget {
+  final DriverSeasonStats stats;
+  final Color themeColor;
+
+  const _F1RadarChart({required this.stats, required this.themeColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final consistency = (stats.grandPrixRaces - stats.dnfs).toDouble();
+
+    return RadarChart(
+      RadarChartData(
+        dataSets: [
+          RadarDataSet(
+            fillColor: themeColor.withValues(alpha: 0.25),
+            borderColor: themeColor,
+            entryRadius: 4,
+            dataEntries: [
+              RadarEntry(value: stats.grandPrixWins.toDouble()),
+              RadarEntry(value: stats.grandPrixPodiums.toDouble()),
+              RadarEntry(value: stats.grandPrixTop10s.toDouble()),
+              RadarEntry(value: consistency),
+              RadarEntry(value: stats.grandPrixPoles.toDouble()),
+            ],
+            borderWidth: 2.5,
+          ),
+        ],
+        radarBackgroundColor: Colors.transparent,
+        borderData: FlBorderData(show: false),
+        radarBorderData: const BorderSide(color: Colors.white12, width: 1.5),
+        titlePositionPercentageOffset: 0.15,
+        titleTextStyle: GoogleFonts.montserrat(
+          color: Colors.white70,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+        getTitle: (index, angle) {
+          switch (index) {
+            case 0:
+              return const RadarChartTitle(text: 'Wins');
+            case 1:
+              return const RadarChartTitle(text: 'Podiums');
+            case 2:
+              return const RadarChartTitle(text: 'Top 10s');
+            case 3:
+              return const RadarChartTitle(text: 'Consistency');
+            case 4:
+              return const RadarChartTitle(text: 'Poles');
+            default:
+              return const RadarChartTitle(text: '');
+          }
+        },
+        tickCount: 5,
+        ticksTextStyle: const TextStyle(color: Colors.transparent),
+        tickBorderData: const BorderSide(color: Colors.white12),
+        gridBorderData: const BorderSide(color: Colors.white24, width: 1.5),
+      ),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
     );
   }
 }
