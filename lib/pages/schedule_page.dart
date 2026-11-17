@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:drayve/widgets/drayve_network_image.dart';
 import 'package:drayve/styles/colors.dart';
 import 'package:drayve/data/schedule_data.dart';
@@ -11,8 +12,30 @@ import 'package:drayve/widgets/driver_avatar.dart';
 
 /// Halaman Schedule: kalender F1 2026 (Round 1 - Round 20),
 /// tampilan kartu mengikuti referensi situs resmi Formula 1.
-class SchedulePage extends StatelessWidget {
+class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
+
+  @override
+  State<SchedulePage> createState() => _SchedulePageState();
+}
+
+class _SchedulePageState extends State<SchedulePage> {
+  static bool _hasShownSkeleton = false;
+  static const Duration _skeletonDuration = Duration(milliseconds: 900);
+
+  bool _isLoading = !_hasShownSkeleton;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isLoading) {
+      Future.delayed(_skeletonDuration, () {
+        if (!mounted) return;
+        _hasShownSkeleton = true;
+        setState(() => _isLoading = false);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +60,21 @@ class SchedulePage extends StatelessWidget {
               mainAxisExtent: isMobile ? 250 : 270,
             ),
             delegate: SliverChildBuilderDelegate(
-              (context, index) => _RaceCard(
-                race: kScheduleRaces[index],
-                isMobile: isMobile,
-              ),
+              (context, index) => _isLoading
+                  ? Shimmer.fromColors(
+                      baseColor: Colors.white10,
+                      highlightColor: Colors.white24,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    )
+                  : _RaceCard(
+                      race: kScheduleRaces[index],
+                      isMobile: isMobile,
+                    ),
               childCount: kScheduleRaces.length,
             ),
           ),
@@ -285,12 +319,24 @@ class _FlagCircle extends StatelessWidget {
             ? DrayveNetworkImage(
                 imageUrl: flagUrl!,
                 fit: BoxFit.cover,
-                placeholder: (_) => _fallback(),
+                placeholder: (_) => Shimmer.fromColors(
+                  baseColor: Colors.white10,
+                  highlightColor: Colors.white24,
+                  child: Container(color: Colors.white),
+                ),
                 errorWidget: (_) => _fallback(),
               )
             : Image.asset(
                 'assets/images/flags/${code.toLowerCase()}.png',
                 fit: BoxFit.cover,
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded || frame != null) return child;
+                  return Shimmer.fromColors(
+                    baseColor: Colors.white10,
+                    highlightColor: Colors.white24,
+                    child: Container(color: Colors.white),
+                  );
+                },
                 errorBuilder: (context, error, stackTrace) => _fallback(),
               ),
       ),

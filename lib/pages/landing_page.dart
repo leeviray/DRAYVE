@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drayve/data/data.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:drayve/providers/favorite_provider.dart';
 import 'package:drayve/widgets/driver_card.dart';
 import 'package:drayve/widgets/animated_background.dart';
@@ -55,6 +56,12 @@ class _LandingPageState
         ScaffoldState
       >();
 
+  /// Kerangka shimmer pada daftar pembalap hanya tampil saat halaman utama
+  /// pertama kali dibuka (sekali per sesi app).
+  static bool _hasShownSkeleton = false;
+  static const Duration _skeletonDuration = Duration(milliseconds: 900);
+  bool _isLoading = !_hasShownSkeleton;
+
   late final SmoothScrollController _scrollController;
   final TextEditingController _searchController = TextEditingController();
 
@@ -92,6 +99,13 @@ class _LandingPageState
     super.initState();
     _scrollController = SmoothScrollController();
     _ratingStatusFuture = _loadRatingStatus();
+    if (_isLoading) {
+      Future.delayed(_skeletonDuration, () {
+        if (!mounted) return;
+        _hasShownSkeleton = true;
+        setState(() => _isLoading = false);
+      });
+    }
     _syncDrivers();
   }
 
@@ -584,6 +598,18 @@ class _LandingPageState
                                             context,
                                             index,
                                           ) {
+                                            if (_isLoading) {
+                                              return Shimmer.fromColors(
+                                                baseColor: Colors.white10,
+                                                highlightColor: Colors.white24,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius: BorderRadius.circular(20),
+                                                  ),
+                                                ),
+                                              );
+                                            }
                                             final currentDriver = displayedDrivers[index];
                                             return RevealOnce(
                                               key: ValueKey(
@@ -1513,6 +1539,10 @@ class _LandingPageState
               snapshot,
             ) {
               String? photoBase64;
+              final bool isLoadingPhoto =
+                  snapshot.connectionState ==
+                      ConnectionState.waiting &&
+                  !snapshot.hasData;
               if (snapshot.hasData &&
                   snapshot.data!.exists) {
                 final data =
@@ -1556,7 +1586,15 @@ class _LandingPageState
                   ),
                   child: ClipOval(
                     child:
-                        photoBase64 !=
+                        isLoadingPhoto
+                        ? Shimmer.fromColors(
+                            baseColor: Colors.white10,
+                            highlightColor: Colors.white24,
+                            child: Container(
+                              color: Colors.white,
+                            ),
+                          )
+                        : photoBase64 !=
                                 null &&
                             photoBase64.isNotEmpty
                         ? Image.memory(
