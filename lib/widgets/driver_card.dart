@@ -1,18 +1,20 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:drayve/providers/auth_provider.dart';
 import 'package:drayve/models/statistik.dart';
 import 'package:drayve/pages/driver_detail_page.dart';
+import 'package:drayve/pages/login_signup_page.dart';
+import 'package:drayve/providers/favorite_provider.dart';
 import 'package:drayve/widgets/drayve_page_route.dart';
 
 class DriverCard
     extends
         StatefulWidget {
   final Statistik driver;
-  final bool isFavorite;
-  final VoidCallback onFavoriteToggle;
 
-  const DriverCard({super.key, required this.driver, required this.isFavorite, required this.onFavoriteToggle});
+  const DriverCard({super.key, required this.driver});
 
   @override
   State<
@@ -401,32 +403,42 @@ class _DriverCardState
                                       children: [
                                         // --- LAYER 1: Gambar Mobil ---
                                         Positioned(
-                                          left: -250,
-                                          bottom: -210,
-                                          child: RotatedBox(
-                                            quarterTurns: 1,
-                                            child: Image.asset(
-                                              driver.fotoMobil,
-                                              height: 580,
-                                              fit: BoxFit.contain,
-                                              errorBuilder: (
-                                                context,
-                                                error,
-                                                stackTrace,
-                                              ) => const SizedBox(),
-                                            ),
+                                          left:
+                                              -size.width *
+                                              0.64, // Sengaja digeser ke luar kiri 15% agar dinamis
+                                          bottom:
+                                              size.height *
+                                              0.06, // Naik sedikit (8%) agar ban tidak menyentuh lantai
+                                          width:
+                                              size.width *
+                                              1.20, // Lebar mobil paten di 85% lebar kartu
+                                          child: Image.asset(
+                                            driver.fotoMobil,
+                                            fit: BoxFit.contain,
+                                            alignment: Alignment.bottomLeft,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) => const SizedBox(),
                                           ),
                                         ),
 
-                                        // --- LAYER 2: Gambar Wajah Pembalap ---
+                                        // --- LAYER 2: Gambar Wajah Pembalap (Efek Half-Body) ---
                                         Positioned(
-                                          right: 60,
-                                          bottom: -310,
+                                          right:
+                                              size.width *
+                                              0.10, // Jarak aman 2% dari tepi kanan
+                                          bottom:
+                                              -size.height *
+                                              0.90, // DORONG KE BAWAH 55% agar kaki terpotong
+                                          height:
+                                              size.height *
+                                              1.80, // PERBESAR GAMBAR jadi 155% dari tinggi kartu
                                           child: Image.asset(
                                             driver.fotoAset,
-                                            height: 600,
                                             fit: BoxFit.contain,
-                                            alignment: Alignment.bottomRight,
+                                            alignment: Alignment.topCenter, // Fokuskan jangkar gambar di kepala
                                             errorBuilder:
                                                 (
                                                   context,
@@ -589,50 +601,67 @@ class _DriverCardState
                                         Positioned(
                                           bottom: 16,
                                           right: 16,
-                                          child: GestureDetector(
-                                            onTap: widget.onFavoriteToggle,
-                                            child: AnimatedContainer(
-                                              duration: const Duration(
-                                                milliseconds: 200,
-                                              ),
-                                              padding: const EdgeInsets.all(
-                                                8,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: widget.isFavorite
-                                                    ? Colors.amber.withValues(
-                                                        alpha: 0.22,
-                                                      )
-                                                    : Colors.black.withValues(
-                                                        alpha: 0.5,
+                                          child: Consumer<FavoriteProvider>(
+                                            builder: (context, favoriteProvider, child) {
+                                              final bool isFav = favoriteProvider.isFavorite(driver.nama);
+
+                                              return GestureDetector(
+                                                onTap: () async {
+                                                  if (!context.read<AuthProvider>().isLoggedIn) {
+                                                    await Navigator.push(
+                                                      context,
+                                                      DrayvePageRoute(
+                                                        builder: (_) => const AuthPage(),
                                                       ),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: widget.isFavorite
-                                                      ? Colors.amber
-                                                      : Colors.white24,
-                                                  width: 1.2,
+                                                    );
+                                                  } else {
+                                                    favoriteProvider.toggleFavorite(driver.nama);
+                                                  }
+                                                },
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(
+                                                    milliseconds: 200,
+                                                  ),
+                                                  padding: const EdgeInsets.all(
+                                                    8,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: isFav
+                                                        ? Colors.amber.withValues(
+                                                            alpha: 0.22,
+                                                          )
+                                                        : Colors.black.withValues(
+                                                            alpha: 0.5,
+                                                          ),
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: isFav
+                                                          ? Colors.amber
+                                                          : Colors.white24,
+                                                      width: 1.2,
+                                                    ),
+                                                  ),
+                                                  child: AnimatedScale(
+                                                    scale: isFav
+                                                        ? 1.15
+                                                        : 1.0,
+                                                    duration: const Duration(
+                                                      milliseconds: 200,
+                                                    ),
+                                                    curve: Curves.elasticOut,
+                                                    child: Icon(
+                                                      isFav
+                                                          ? Icons.star_rounded
+                                                          : Icons.star_border_rounded,
+                                                      color: isFav
+                                                          ? Colors.amber
+                                                          : Colors.white,
+                                                      size: 24,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                              child: AnimatedScale(
-                                                scale: widget.isFavorite
-                                                    ? 1.15
-                                                    : 1.0,
-                                                duration: const Duration(
-                                                  milliseconds: 200,
-                                                ),
-                                                curve: Curves.elasticOut,
-                                                child: Icon(
-                                                  widget.isFavorite
-                                                      ? Icons.star_rounded
-                                                      : Icons.star_border_rounded,
-                                                  color: widget.isFavorite
-                                                      ? Colors.amber
-                                                      : Colors.white,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                            ),
+                                              );
+                                            },
                                           ),
                                         ),
                                       ],

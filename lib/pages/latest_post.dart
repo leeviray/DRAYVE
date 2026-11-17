@@ -1,8 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:drayve/widgets/drayve_network_image.dart';
+import 'package:provider/provider.dart';
 import 'package:drayve/data/data_sosmed.dart';
+import 'package:drayve/data/f1_photos.dart';
 import 'package:drayve/pages/login_signup_page.dart';
-import 'package:drayve/data/auth_state.dart'; // IMPORT GLOBAL STATE
+import 'package:drayve/providers/auth_provider.dart';
+import 'package:drayve/pages/photo_viewer_page.dart';
 
 class LatestPostTab
     extends
@@ -69,11 +75,12 @@ class LatestPostTab
               ),
             )
           else
-            ...socialData.posts.map(
+            ...socialData.posts.asMap().entries.map(
               (
-                post,
+                entry,
               ) => InteractivePostCard(
-                post: post,
+                post: entry.value,
+                postIndex: entry.key,
                 driverName: driverName,
                 driverTeam: driverTeam,
                 fotoAset: fotoAset,
@@ -89,11 +96,12 @@ class InteractivePostCard
     extends
         StatefulWidget {
   final PostData post;
+  final int postIndex;
   final String driverName;
   final String driverTeam;
   final String fotoAset;
 
-  const InteractivePostCard({super.key, required this.post, required this.driverName, required this.driverTeam, required this.fotoAset});
+  const InteractivePostCard({super.key, required this.post, this.postIndex = 0, required this.driverName, required this.driverTeam, required this.fotoAset});
 
   @override
   State<
@@ -116,22 +124,27 @@ class _InteractivePostCardState
     currentLikes = widget.post.likes;
   }
 
-  Future<
-    void
-  >
-  _handleLike() async {
-    if (!globalIsLoggedIn) {
+  void _openPhoto(ImageProvider provider, String tag) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PhotoViewerPage(
+          imageProvider: provider,
+          heroTag: tag,
+          title: widget.driverName,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLike() async {
+    if (!context.read<AuthProvider>().isLoggedIn) {
       // PAKAI GLOBAL STATE
       final result = await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (
-            context,
-          ) => const AuthPage(),
-        ),
+        MaterialPageRoute(builder: (context) => const AuthPage()),
       );
-      if (result ==
-          true) {
+      if (result == true) {
         setState(() {
           isLiked = true;
           currentLikes++;
@@ -140,9 +153,7 @@ class _InteractivePostCardState
     } else {
       setState(() {
         isLiked = !isLiked;
-        isLiked
-            ? currentLikes++
-            : currentLikes--;
+        isLiked ? currentLikes++ : currentLikes--;
       });
     }
   }
@@ -151,7 +162,7 @@ class _InteractivePostCardState
     void
   >
   _handleComment() async {
-    if (!globalIsLoggedIn) {
+    if (!context.read<AuthProvider>().isLoggedIn) {
       // PAKAI GLOBAL STATE
       final result = await Navigator.push(
         context,
@@ -287,30 +298,64 @@ class _InteractivePostCardState
           const SizedBox(
             height: 16,
           ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(
-              12,
-            ),
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              // TODO: Ganti picsum ini dengan aset lokal jika sudah siap
-              child: Image.network(
-                "https://picsum.photos/seed/${widget.post.content.hashCode}/500/500",
-                fit: BoxFit.cover,
-                errorBuilder:
-                    (
-                      context,
-                      error,
-                      stackTrace,
-                    ) => Container(
-                      color: Colors.white10,
-                      child: const Icon(
-                        Icons.broken_image,
-                        color: Colors.white54,
-                        size: 48,
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () {
+                final photoUrl = getDriverPostPhotoUrl(
+                  widget.driverName,
+                  widget.postIndex,
+                );
+                _openPhoto(
+                  kIsWeb
+                      ? NetworkImage(photoUrl) as ImageProvider
+                      : CachedNetworkImageProvider(photoUrl),
+                  "post-${widget.driverName}-${widget.postIndex}-${widget.post.content.hashCode}",
+                );
+              },
+              child: Hero(
+                tag:
+                    "post-${widget.driverName}-${widget.postIndex}-${widget.post.content.hashCode}",
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    12,
+                  ),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 10,
+                    child: DrayveNetworkImage(
+                      imageUrl: getDriverPostPhotoUrl(
+                        widget.driverName,
+                        widget.postIndex,
+                      ),
+                      fit: BoxFit.cover,
+                      placeholder: (_) => Container(color: Colors.white10),
+                      errorWidget: (_) => Container(
+                        color: Colors.white10,
+                        child: Image.asset(
+                          widget.fotoAset,
+                          fit: BoxFit.contain,
+                          alignment: Alignment.bottomCenter,
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.broken_image,
+                            color: Colors.white54,
+                            size: 48,
+                          ),
+                        ),
                       ),
                     ),
+                  ),
+                ),
               ),
+            ),
+          ),
+          const SizedBox(
+            height: 6,
+          ),
+          Text(
+            "Photo: Wikimedia Commons (CC BY-SA)",
+            style: GoogleFonts.montserrat(
+              color: Colors.white38,
+              fontSize: 11,
             ),
           ),
           const SizedBox(

@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class DiscussionTab
     extends
@@ -261,6 +264,13 @@ class _DiscussionTabState
                                           ? data['photoURL'] as String?
                                           : null;
 
+                                      final timestamp = data['timestamp'] as Timestamp?;
+                                      String timeAgoText = '';
+                                      if (timestamp != null) {
+                                        final dateTime = timestamp.toDate();
+                                        timeAgoText = timeago.format(dateTime);
+                                      }
+
                                       return _buildChatBubble(
                                         userName:
                                             data['userName'] ??
@@ -270,6 +280,7 @@ class _DiscussionTabState
                                             '',
                                         photoUrl: photoUrl,
                                         isMe: isMe,
+                                        timeAgo: timeAgoText,
                                       );
                                     },
                               );
@@ -384,32 +395,20 @@ class _DiscussionTabState
     required String text,
     String? photoUrl,
     required bool isMe,
+    required String timeAgo,
   }) {
-    // Menentukan tampilan Avatar
     Widget avatar = CircleAvatar(
       backgroundColor: isMe
-          ? const Color(
-              0xFFE10600,
-            ).withOpacity(
-              0.5,
-            )
+          ? const Color(0xFFE10600).withValues(alpha: 0.5)
           : Colors.white12,
-      backgroundImage:
-          (photoUrl !=
-                  null &&
-              photoUrl.isNotEmpty)
-          ? NetworkImage(
-              photoUrl,
-            )
+      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+          ? (kIsWeb
+              ? NetworkImage(photoUrl) as ImageProvider
+              : CachedNetworkImageProvider(photoUrl))
           : null,
-      child:
-          (photoUrl ==
-                  null ||
-              photoUrl.isEmpty)
+      child: (photoUrl == null || photoUrl.isEmpty)
           ? Text(
-              userName.isNotEmpty
-                  ? userName[0].toUpperCase()
-                  : '?',
+              userName.isNotEmpty ? userName[0].toUpperCase() : '?',
               style: GoogleFonts.montserrat(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -419,40 +418,57 @@ class _DiscussionTabState
     );
 
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 20.0,
-      ),
+      padding: const EdgeInsets.only(bottom: 20.0),
       child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMe) ...[
             avatar,
-            const SizedBox(
-              width: 12,
-            ),
+            const SizedBox(width: 12),
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                Text(
-                  isMe
-                      ? "You"
-                      : userName,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white54,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    if (isMe && timeAgo.isNotEmpty) ...[
+                      Text(
+                        timeAgo,
+                        style: GoogleFonts.montserrat(
+                          color: Colors.white38,
+                          fontSize: 10,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      isMe ? "You" : userName,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (!isMe && timeAgo.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        timeAgo,
+                        style: GoogleFonts.montserrat(
+                          color: Colors.white38,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(
-                  height: 4,
-                ),
+                const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -460,29 +476,13 @@ class _DiscussionTabState
                   ),
                   decoration: BoxDecoration(
                     color: isMe
-                        ? const Color(
-                            0xFFE10600,
-                          )
-                        : Colors.white.withOpacity(
-                            0.05,
-                          ),
+                        ? const Color(0xFFE10600)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(
-                        16,
-                      ),
-                      topRight: const Radius.circular(
-                        16,
-                      ),
-                      bottomLeft: Radius.circular(
-                        isMe
-                            ? 16
-                            : 0,
-                      ),
-                      bottomRight: Radius.circular(
-                        isMe
-                            ? 0
-                            : 16,
-                      ),
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isMe ? 16 : 0),
+                      bottomRight: Radius.circular(isMe ? 0 : 16),
                     ),
                   ),
                   child: Text(
@@ -498,9 +498,7 @@ class _DiscussionTabState
             ),
           ),
           if (isMe) ...[
-            const SizedBox(
-              width: 12,
-            ),
+            const SizedBox(width: 12),
             avatar,
           ],
         ],
