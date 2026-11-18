@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_glass_morphism/flutter_glass_morphism.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
@@ -28,8 +29,16 @@ main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(
+          create: (
+            _,
+          ) => AuthProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (
+            _,
+          ) => FavoriteProvider(),
+        ),
       ],
       child: const DrayveApp(),
     ),
@@ -45,23 +54,25 @@ class DrayveApp
   Widget build(
     BuildContext context,
   ) {
-    return MaterialApp(
-      title: 'DRAYVE - F1 Drivers Hub',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.backgroundDark,
-        useMaterial3: true,
+    return GlassMorphismThemeProvider(
+      child: MaterialApp(
+        title: 'DRAYVE - F1 Drivers Hub',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          scaffoldBackgroundColor: AppColors.backgroundDark,
+          useMaterial3: true,
+        ),
+        home: const SplashScreen(),
+        builder:
+            (
+              context,
+              child,
+            ) => _DesktopUiScaler(
+              child:
+                  child ??
+                  const SizedBox.shrink(),
+            ),
       ),
-      home: const SplashScreen(),
-      builder:
-          (
-            context,
-            child,
-          ) => _DesktopUiScaler(
-            child:
-                child ??
-                const SizedBox.shrink(),
-          ),
     );
   }
 }

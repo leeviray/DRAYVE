@@ -1,15 +1,12 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_glass_morphism/flutter_glass_morphism.dart';
 
-/// Pembungkus glassmorphism bergaya iOS "liquid glass".
-/// Dipakai untuk navbar (pill melayang) dan dropdown menu mobile.
+
 class GlassNavbar extends StatelessWidget {
   final Widget child;
-  final EdgeInsetsGeometry padding;
-  final EdgeInsetsGeometry margin;
+  final EdgeInsets padding;
+  final EdgeInsets margin;
   final double borderRadius;
-  final double blur;
 
   const GlassNavbar({
     super.key,
@@ -17,7 +14,6 @@ class GlassNavbar extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
     this.margin = EdgeInsets.zero,
     this.borderRadius = 28,
-    this.blur = 28,
   });
 
   @override
@@ -26,7 +22,6 @@ class GlassNavbar extends StatelessWidget {
 
     return Container(
       margin: margin,
-      // Shadow di luar clip supaya tidak terpotong
       decoration: BoxDecoration(
         borderRadius: radius,
         boxShadow: [
@@ -39,25 +34,11 @@ class GlassNavbar extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: radius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: CustomPaint(
-            foregroundPainter: _GlassBorderPainter(radius: borderRadius),
-            child: Container(
-              padding: padding,
-              decoration: BoxDecoration(
-                // Lapisan kaca: terang di kiri atas, redup di kanan bawah
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.16),
-                    Colors.white.withOpacity(0.05),
-                  ],
-                ),
-              ),
-              child: child,
-            ),
+        child: CustomPaint(
+          foregroundPainter: _GlassBorderPainter(radius: borderRadius),
+          child: GlassMorphismContainer(
+            padding: padding,
+            child: child,
           ),
         ),
       ),
@@ -65,8 +46,7 @@ class GlassNavbar extends StatelessWidget {
   }
 }
 
-/// Border tipis dengan highlight specular (terang di sudut kiri atas
-/// dan kanan bawah, redup di tengah) seperti kaca iOS.
+
 class _GlassBorderPainter extends CustomPainter {
   final double radius;
   const _GlassBorderPainter({required this.radius});

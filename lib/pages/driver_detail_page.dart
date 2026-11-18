@@ -1,6 +1,5 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_glass_morphism/flutter_glass_morphism.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -511,8 +510,8 @@ class _DriverDetailPageState
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: ClipRRect(
                           borderRadius: BorderRadius.circular(24),
-                          child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                          child: GlassMorphismContainer(
+                          padding: EdgeInsets.zero,
                           child: AnimatedContainer(
                             duration: const Duration(
                               milliseconds: 350,
@@ -523,14 +522,6 @@ class _DriverDetailPageState
                                 : 0.0,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white.withOpacity(0.16),
-                                  Colors.white.withOpacity(0.06),
-                                ],
-                              ),
                               border: Border.all(
                                 color: Colors.white.withOpacity(0.22),
                                 width: 1,
