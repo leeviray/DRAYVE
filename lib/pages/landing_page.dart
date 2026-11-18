@@ -864,77 +864,93 @@ class _LandingPageState
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: HoverScale(
-                      scale: 1.03,
-                      onTap: _reloadPage,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'DRAYVE',
-                            style: TextStyle(
-                              fontFamily: 'Ethnocentric',
-                              fontStyle: FontStyle.italic,
-                              fontSize: 32,
-                              color: Colors.white,
-                              letterSpacing: 1.5,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: HoverScale(
+                        scale: 1.03,
+                        onTap: _reloadPage,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'DRAYVE',
+                              style: TextStyle(
+                                fontFamily: 'Ethnocentric',
+                                fontStyle: FontStyle.italic,
+                                fontSize: 32,
+                                color: Colors.white,
+                                letterSpacing: 1.5,
+                              ),
                             ),
-                          ),
-                          Text(
-                            'F1 Drivers Hub Community',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 16,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w400,
+                            Text(
+                              'F1 Drivers Hub Community',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 16,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildNavMenu(
-                      'Drivers',
-                      '',
+                const SizedBox(width: 12),
+                Flexible(
+                  flex: 2,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildNavMenu(
+                          'Drivers',
+                          '',
+                        ),
+                        const SizedBox(
+                          width: 32,
+                        ),
+                        _buildNavMenu(
+                          'Favorite',
+                          'Favorite',
+                        ),
+                        const SizedBox(
+                          width: 32,
+                        ),
+                        _buildNavMenu(
+                          'Teams',
+                          'Teams',
+                        ),
+                        const SizedBox(
+                          width: 32,
+                        ),
+                        _buildNavMenu(
+                          'Schedule',
+                          'Schedule',
+                        ),
+                        const SizedBox(
+                          width: 32,
+                        ),
+                        _buildNavMenu(
+                          'About',
+                          'About',
+                        ),
+                      ],
                     ),
-                    const SizedBox(
-                      width: 32,
-                    ),
-                    _buildNavMenu(
-                      'Favorite',
-                      'Favorite',
-                    ),
-                    const SizedBox(
-                      width: 32,
-                    ),
-                    _buildNavMenu(
-                      'Teams',
-                      'Teams',
-                    ),
-                    const SizedBox(
-                      width: 32,
-                    ),
-                    _buildNavMenu(
-                      'Schedule',
-                      'Schedule',
-                    ),
-                    const SizedBox(
-                      width: 32,
-                    ),
-                    _buildNavMenu(
-                      'About',
-                      'About',
-                    ),
-                  ],
+                  ),
                 ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: _buildHeaderAction(
-                      isMobile,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: _buildHeaderAction(
+                        isMobile,
+                      ),
                     ),
                   ),
                 ),
