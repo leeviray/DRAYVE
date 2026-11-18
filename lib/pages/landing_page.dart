@@ -898,48 +898,42 @@ class _LandingPageState
                   ),
                 ),
                 const SizedBox(width: 12),
-                Flexible(
-                  flex: 2,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildNavMenu(
-                          'Drivers',
-                          '',
-                        ),
-                        const SizedBox(
-                          width: 32,
-                        ),
-                        _buildNavMenu(
-                          'Favorite',
-                          'Favorite',
-                        ),
-                        const SizedBox(
-                          width: 32,
-                        ),
-                        _buildNavMenu(
-                          'Teams',
-                          'Teams',
-                        ),
-                        const SizedBox(
-                          width: 32,
-                        ),
-                        _buildNavMenu(
-                          'Schedule',
-                          'Schedule',
-                        ),
-                        const SizedBox(
-                          width: 32,
-                        ),
-                        _buildNavMenu(
-                          'About',
-                          'About',
-                        ),
-                      ],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildNavMenu(
+                      'Drivers',
+                      '',
                     ),
-                  ),
+                    const SizedBox(
+                      width: 32,
+                    ),
+                    _buildNavMenu(
+                      'Favorite',
+                      'Favorite',
+                    ),
+                    const SizedBox(
+                      width: 32,
+                    ),
+                    _buildNavMenu(
+                      'Teams',
+                      'Teams',
+                    ),
+                    const SizedBox(
+                      width: 32,
+                    ),
+                    _buildNavMenu(
+                      'Schedule',
+                      'Schedule',
+                    ),
+                    const SizedBox(
+                      width: 32,
+                    ),
+                    _buildNavMenu(
+                      'About',
+                      'About',
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 12),
                 Expanded(
